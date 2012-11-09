@@ -1,4 +1,5 @@
 (in-package :weblocks-utils)
+(defvar *packages-used* nil)
 
 (defun prevalence-poweredp (&key store)
   (let ((store (or store *default-store*)))
@@ -126,7 +127,10 @@
                    (when (and (consp value) (functionp (cdr value)))
                      (setf test-fun (cdr value))
                      (setf value (car value)))
-                   (unless (funcall test value (slot-value object (intern (string  key))))
+                   (pushnew (list args *package*) *packages-used*)
+                   (unless (funcall test value (slot-value object 
+                                                           (intern (string  key) 
+                                                                   (package-name (symbol-package (type-of object))))))
                      (return-from filter-by-values nil))))
            t))
 
