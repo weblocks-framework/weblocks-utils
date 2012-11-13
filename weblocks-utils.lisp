@@ -143,6 +143,9 @@
   (loop for i in (all-of model) do 
         (delete-persistent-object *default-store* i)))
 
+(defun delete-one (obj)
+  (delete-persistent-object *default-store* obj))
+
 (defun object->simple-plist (object &rest filters)
   (loop for i in (sb-mop:class-direct-slots (find-class (class-name  (class-of object)))) append 
         (let* ((slot (intern (string (sb-mop:slot-definition-name i)) "KEYWORD"))

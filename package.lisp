@@ -12,5 +12,6 @@
     #:find-by-values 
     #:first-by-values 
     #:object->simple-plist 
-    #:delete-all))
+    #:delete-all 
+    #:delete-one))
 
