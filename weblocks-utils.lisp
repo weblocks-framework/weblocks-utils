@@ -128,7 +128,7 @@
                      (setf test-fun (cdr value))
                      (setf value (car value)))
                    (pushnew (list args *package*) *packages-used*)
-                   (unless (funcall test value (slot-value object 
+                   (unless (funcall test-fun value (slot-value object 
                                                            (intern (string  key) 
                                                                    (package-name (symbol-package (type-of object))))))
                      (return-from filter-by-values nil))))
