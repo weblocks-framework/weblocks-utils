@@ -13,5 +13,6 @@
     #:first-by-values 
     #:object->simple-plist 
     #:delete-all 
-    #:delete-one))
+    #:delete-one 
+    #:first-of))
 

@@ -116,6 +116,9 @@
 (defun all-of (cls &key order-by range)
   (find-persistent-objects *default-store* cls :order-by order-by :range range))
 
+(defun first-of (cls &key order-by range)
+  (first (all-of cls :order-by order-by :range range)))
+
 (defun first-by (class fun &key order-by range)
   (first (find-by class fun :order-by order-by :range range)))
 
