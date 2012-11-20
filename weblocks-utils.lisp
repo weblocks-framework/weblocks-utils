@@ -2,12 +2,14 @@
 (defvar *packages-used* nil)
 
 (defun prevalence-poweredp (&key store)
+  "returns T if *default-store* is prevalence store"
   (let ((store (or store *default-store*)))
     (if (find-package 'cl-prevalence)
       (eq (class-name  (class-of store)) (intern "GUARDED-PREVALENCE-SYSTEM" "CL-PREVALENCE"))
       nil)))
 
 (defun clsql-poveredp (&key store)
+  "returns T if *default-store* is clsql store"
   (let ((store (or store *default-store*)))
     (and 
       (find-package 'clsql)
@@ -77,6 +79,8 @@
       result)))
 
 (defun find-by (class fun &key order-by range store)
+  "Takes as arguments class and predicate and filters all data by predicate. For clsql store predicate also used though it is very slow.
+   Also accepts :order-by and :range parameters which are equal to 'find-persistent-objects' ones and :store parameter which is equal to 'find-persistent-objects' first parameter."
   (declare (special weblocks:*default-store*))
   (let ((store (or store weblocks:*default-store*)))
     (cond 
@@ -102,8 +106,9 @@
                                   :order-by order-by 
                                   :range range)))))
 
-; TODO count-by-in-sql-store not used yet
+; TODO count-by-in-sql-store not used yet, so should not work with mysql
 (defun count-by (class fun &key store &allow-other-keys)
+  "Similar to find-by but returns count of items instead of items list."
   (let ((store (or store *default-store*)))
     (if (prevalence-poweredp :store store)
       (count-persistent-objects store class 
@@ -114,15 +119,20 @@
 
 
 (defun all-of (cls &key order-by range)
+  "Simple wrapper around 'find-persistent-objects', returns all elements of persistent class, useful when debugging."
   (find-persistent-objects *default-store* cls :order-by order-by :range range))
 
 (defun first-of (cls &key order-by range)
+  "Returns first element of persistent class."
   (first (all-of cls :order-by order-by :range range)))
 
 (defun first-by (class fun &key order-by range)
+  "Similar to 'find-by' but returns only first element of a list."
   (first (find-by class fun :order-by order-by :range range)))
 
 (defun find-by-values (class &rest args &key (test #'equal) &allow-other-keys)
+  "Returns items of specified class. Filters passed as key arguments (key is slot name, value is value compared). 
+   :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
   (flet ((filter-by-values (object)
            (loop for key in args by #'cddr do 
                  (let ((value (getf args key))
@@ -140,16 +150,20 @@
     (find-persistent-objects *default-store* class :filter #'filter-by-values)))
 
 (defun first-by-values (&rest args)
+  "Similar to 'find-by-values' but returns only first item"
   (first (apply #'find-by-values args)))
 
 (defun delete-all (model)
+  "Deletes all items of specified class, useful for debugging."
   (loop for i in (all-of model) do 
         (delete-persistent-object *default-store* i)))
 
 (defun delete-one (obj)
+  "Wrapper around 'find-persistent-objects' deletes specific object from *default-store*"
   (delete-persistent-object *default-store* obj))
 
 (defun object->simple-plist (object &rest filters)
+  "Displays class values in readable way for debugging purposes. Handles not bound slots."
   (loop for i in (sb-mop:class-direct-slots (find-class (class-name  (class-of object)))) append 
         (let* ((slot (intern (string (sb-mop:slot-definition-name i)) "KEYWORD"))
                (value (if (slot-boundp object (sb-mop:slot-definition-name i))

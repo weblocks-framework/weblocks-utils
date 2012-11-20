@@ -1,7 +1,7 @@
 (defpackage #:weblocks-utils
   (:use :cl :weblocks)
   (:documentation
-    "Filtering widget for weblocks framework")
+    "Utility functions for weblocks framework")
   (:export 
     #:prevalence-poveredp 
     #:clsql-poveredp 
