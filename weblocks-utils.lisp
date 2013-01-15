@@ -162,12 +162,3 @@
 (defun delete-one (obj)
   "Wrapper around 'find-persistent-objects' deletes specific object from *default-store*"
   (delete-persistent-object *default-store* obj))
-
-(defun object->simple-plist (object &rest filters)
-  "Displays class values in readable way for debugging purposes. Handles not bound slots."
-  (loop for i in (sb-mop:class-direct-slots (find-class (class-name  (class-of object)))) append 
-        (let* ((slot (intern (string (sb-mop:slot-definition-name i)) "KEYWORD"))
-               (value (if (slot-boundp object (sb-mop:slot-definition-name i))
-                        (slot-value object (sb-mop:slot-definition-name i))
-                        "Unbound")))
-          (list slot (if (getf filters slot) (funcall (getf filters slot) value) value)))))

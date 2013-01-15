@@ -3,6 +3,7 @@
   (:documentation
     "Utility functions for weblocks framework")
   (:export 
+    ; weblocks-utils
     #:prevalence-poveredp 
     #:clsql-poveredp 
     #:find-by 
@@ -11,8 +12,18 @@
     #:all-of 
     #:find-by-values 
     #:first-by-values 
-    #:object->simple-plist 
     #:delete-all 
     #:delete-one 
-    #:first-of))
+    #:first-of 
+
+    ; debug-utils
+    #:object->simple-plist 
+    #:first-active-webapp
+    #:maybe-with-first-active-webapp
+
+    ; session-debug
+    #:first-active-session
+    #:debug-session
+    #:debug-first-session
+    #:debug-single-session))
 
