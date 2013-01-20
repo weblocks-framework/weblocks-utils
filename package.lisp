@@ -25,5 +25,7 @@
     #:first-active-session
     #:debug-session
     #:debug-first-session
-    #:debug-single-session))
+    #:debug-single-session 
+    #:enter-first-active-session
+    #:with-first-active-session))
 

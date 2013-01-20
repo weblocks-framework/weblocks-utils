@@ -117,7 +117,6 @@
                                :filter-fn 
                                (lambda (item) (not (funcall fun item)))))))
 
-
 (defun all-of (cls &key order-by range)
   "Simple wrapper around 'find-persistent-objects', returns all elements of persistent class, useful when debugging."
   (find-persistent-objects *default-store* cls :order-by order-by :range range))
@@ -130,10 +129,10 @@
   "Similar to 'find-by' but returns only first element of a list."
   (first (find-by class fun :order-by order-by :range range)))
 
-(defun find-by-values (class &rest args &key (test #'equal) order-by &allow-other-keys)
+(defun find-by-values (class &rest args &key (test #'equal) order-by range &allow-other-keys)
   "Returns items of specified class. Filters passed as key arguments (key is slot name, value is value compared). 
    :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
-  (setf args (alexandria:remove-from-plist args :order-by))
+  (setf args (alexandria:remove-from-plist args :order-by :range))
   (flet ((filter-by-values (object)
            (loop for key in args by #'cddr do 
                  (let ((value (getf args key))
@@ -148,7 +147,7 @@
                      (return-from filter-by-values nil))))
            t))
 
-    (find-persistent-objects *default-store* class :filter #'filter-by-values :order-by order-by)))
+    (find-persistent-objects *default-store* class :filter #'filter-by-values :order-by order-by :range range)))
 
 (defun first-by-values (&rest args)
   "Similar to 'find-by-values' but returns only first item"

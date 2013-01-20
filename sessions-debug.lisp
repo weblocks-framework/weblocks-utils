@@ -24,3 +24,10 @@
     (warn "There are more than one sessions"))
   (debug-first-session output-stream))
 
+(defun enter-first-active-session ()
+  (in-session (hunchentoot:session-id (first-active-session))))
+
+(defmacro with-first-active-session (&body body)
+  `(progn 
+     (enter-first-active-session)
+     ,@body))
