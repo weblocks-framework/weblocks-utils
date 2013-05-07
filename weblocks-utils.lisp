@@ -1,20 +1,27 @@
 (in-package :weblocks-utils)
+
 (defvar *packages-used* nil)
+
+(defun memory-poweredp (&key store)
+  (let ((store (or store *default-store*)))
+    (if (find-package 'weblocks-memory)
+      (equal (type-of  store) (intern "MEMORY-STORE" "WEBLOCKS-MEMORY"))
+      nil)))
 
 (defun prevalence-poweredp (&key store)
   "returns T if *default-store* is prevalence store"
   (let ((store (or store *default-store*)))
     (if (find-package 'cl-prevalence)
-      (eq (class-name  (class-of store)) (intern "GUARDED-PREVALENCE-SYSTEM" "CL-PREVALENCE"))
+      (equal (type-of store) (intern "GUARDED-PREVALENCE-SYSTEM" "CL-PREVALENCE"))
       nil)))
 
-(defun clsql-poveredp (&key store)
+(defun clsql-poweredp (&key store)
   "returns T if *default-store* is clsql store"
   (let ((store (or store *default-store*)))
     (and 
       (find-package 'clsql)
       (find-package 'clsql-fluid-bt)
-      (string= (string (class-name (class-of store))) (string (intern "FLUID-DATABASE" "CLSQL-FLUID-BT"))))))
+      (equal (type-of store) (intern "FLUID-DATABASE" "CLSQL-FLUID-BT")))))
 
 (defun find-by-in-sql-store (class fun &key order-by range store)
   (if (not range)
@@ -84,7 +91,8 @@
   (declare (special weblocks:*default-store*))
   (let ((store (or store weblocks:*default-store*)))
     (cond 
-      ((prevalence-poweredp :store store)
+      ((or (prevalence-poweredp :store store)
+           (memory-poweredp :store store))
        (find-persistent-objects store class 
                                 :filter fun 
                                 :order-by order-by 
@@ -110,16 +118,16 @@
 (defun count-by (class fun &key store &allow-other-keys)
   "Similar to find-by but returns count of items instead of items list."
   (let ((store (or store *default-store*)))
-    (if (prevalence-poweredp :store store)
+    (if (or (prevalence-poweredp :store store) (memory-poweredp :store store))
       (count-persistent-objects store class 
                                :filter fun)
       (count-persistent-objects store class 
                                :filter-fn 
                                (lambda (item) (not (funcall fun item)))))))
 
-(defun all-of (cls &key order-by range)
+(defun all-of (cls &key store order-by range)
   "Simple wrapper around 'find-persistent-objects', returns all elements of persistent class, useful when debugging."
-  (find-persistent-objects *default-store* cls :order-by order-by :range range))
+  (find-persistent-objects (or store *default-store*) cls :order-by order-by :range range))
 
 (defun first-of (cls &key order-by range)
   "Returns first element of persistent class."

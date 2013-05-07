@@ -4,8 +4,9 @@
     "Utility functions for weblocks framework")
   (:export 
     ; weblocks-utils
-    #:prevalence-poveredp 
-    #:clsql-poveredp 
+    #:memory-poweredp
+    #:prevalence-poweredp 
+    #:clsql-poweredp 
     #:find-by 
     #:first-by 
     #:count-by 
