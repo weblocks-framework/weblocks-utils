@@ -28,5 +28,6 @@
     #:debug-first-session
     #:debug-single-session 
     #:enter-first-active-session
-    #:with-first-active-session))
+    #:with-first-active-session 
+    #:start-debug-app))
 
