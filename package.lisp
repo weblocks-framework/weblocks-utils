@@ -1,5 +1,5 @@
 (defpackage #:weblocks-utils
-  (:use :cl :weblocks)
+  (:use :cl :weblocks :weblocks-stores)
   (:documentation
     "Utility functions for weblocks framework")
   (:export 

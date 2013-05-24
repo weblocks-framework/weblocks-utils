@@ -88,8 +88,8 @@
 (defun find-by (class fun &key order-by range store)
   "Takes as arguments class and predicate and filters all data by predicate. For clsql store predicate also used though it is very slow.
    Also accepts :order-by and :range parameters which are equal to 'find-persistent-objects' ones and :store parameter which is equal to 'find-persistent-objects' first parameter."
-  (declare (special weblocks:*default-store*))
-  (let ((store (or store weblocks:*default-store*)))
+  (declare (special *default-store*))
+  (let ((store (or store *default-store*)))
     (cond 
       ((or (prevalence-poweredp :store store)
            (memory-poweredp :store store))
