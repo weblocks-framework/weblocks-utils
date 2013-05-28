@@ -97,7 +97,7 @@
                                 :filter fun 
                                 :order-by order-by 
                                 :range range))
-      ((clsql-poveredp :store store)
+      ((clsql-poweredp :store store)
        (if fun 
          (find-by-in-sql-store 
            class fun 
@@ -169,3 +169,12 @@
 (defun delete-one (obj)
   "Wrapper around 'find-persistent-objects' deletes specific object from *default-store*"
   (delete-persistent-object *default-store* obj))
+
+(defmacro with-object-cache ((obj key) &body body)
+  `(with-cache ((object-cache-key ,obj ,key) :store *default-cache-store*)
+     ,@body))
+
+(defun object-cache-key (obj key)
+  (format nil "~A-~A-~A" (type-of obj) (object-id obj) key))
+
+

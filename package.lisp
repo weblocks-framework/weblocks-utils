@@ -1,5 +1,5 @@
 (defpackage #:weblocks-utils
-  (:use :cl :weblocks :weblocks-stores)
+  (:use :cl :weblocks :weblocks-stores :clache)
   (:documentation
     "Utility functions for weblocks framework")
   (:export 
@@ -29,5 +29,7 @@
     #:debug-single-session 
     #:enter-first-active-session
     #:with-first-active-session 
-    #:start-debug-app))
+    #:start-debug-app 
+    #:with-object-cache
+    #:*default-cache-store*))
 
