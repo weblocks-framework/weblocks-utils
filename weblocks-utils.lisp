@@ -129,46 +129,46 @@
   "Simple wrapper around 'find-persistent-objects', returns all elements of persistent class, useful when debugging."
   (find-persistent-objects (or store *default-store*) cls :order-by order-by :range range))
 
-(defun first-of (cls &key order-by range)
+(defun first-of (cls &key order-by range (store *default-store*))
   "Returns first element of persistent class."
-  (first (all-of cls :order-by order-by :range range)))
+  (first (all-of cls :order-by order-by :range range :store store)))
 
 (defun first-by (class fun &key order-by range)
   "Similar to 'find-by' but returns only first element of a list."
   (first (find-by class fun :order-by order-by :range range)))
 
-(defun find-by-values (class &rest args &key (test #'equal) order-by range &allow-other-keys)
+(defun find-by-values (class &rest args &key (test #'equal) order-by range (store *default-store*) &allow-other-keys)
   "Returns items of specified class. Filters passed as key arguments (key is slot name, value is value compared). 
-   :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
-  (setf args (alexandria:remove-from-plist args :order-by :range))
+  :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
+  (setf args (alexandria:remove-from-plist args :order-by :range :store))
   (flet ((filter-by-values (object)
-           (loop for key in args by #'cddr do 
-                 (let ((value (getf args key))
-                       (test-fun test))
-                   (when (and (consp value) (functionp (cdr value)))
-                     (setf test-fun (cdr value))
-                     (setf value (car value)))
-                   (pushnew (list args *package*) *packages-used*)
-                   (unless (funcall test-fun value (slot-value object 
-                                                           (intern (string  key) 
-                                                                   (package-name (symbol-package (type-of object))))))
-                     (return-from filter-by-values nil))))
-           t))
+                           (loop for key in args by #'cddr do 
+                                 (let ((value (getf args key))
+                                       (test-fun test))
+                                   (when (and (consp value) (functionp (cdr value)))
+                                     (setf test-fun (cdr value))
+                                     (setf value (car value)))
+                                   (pushnew (list args *package*) *packages-used*)
+                                   (unless (funcall test-fun value (slot-value object 
+                                                                               (intern (string  key) 
+                                                                                       (package-name (symbol-package (type-of object))))))
+                                     (return-from filter-by-values nil))))
+                           t))
 
-    (find-persistent-objects *default-store* class :filter #'filter-by-values :order-by order-by :range range)))
+    (find-persistent-objects store class :filter #'filter-by-values :order-by order-by :range range)))
 
 (defun first-by-values (&rest args)
   "Similar to 'find-by-values' but returns only first item"
   (first (apply #'find-by-values args)))
 
-(defun delete-all (model)
+(defun delete-all (model &key (store *default-store*))
   "Deletes all items of specified class, useful for debugging."
-  (loop for i in (all-of model) do 
-        (delete-persistent-object *default-store* i)))
+  (loop for i in (all-of model :store store) do 
+        (delete-persistent-object store i)))
 
-(defun delete-one (obj)
+(defun delete-one (obj &key (store *default-store* ))
   "Wrapper around 'find-persistent-objects' deletes specific object from *default-store*"
-  (delete-persistent-object *default-store* obj))
+  (delete-persistent-object store obj))
 
 (defmacro with-object-cache ((obj key) &body body)
   `(with-cache ((object-cache-key ,obj ,key) :store *default-cache-store*)
