@@ -11,52 +11,138 @@
   (hunchentoot:remove-session (hunchentoot::get-stored-session (parse-integer id)))
   (redirect (weblocks::weblocks-webapp-prefix (weblocks::current-webapp))))
 
-(defun render-debug-output (&rest args)
-  (with-html 
-    (:h1 "Webapps")
-    (loop for i in weblocks::*registered-webapps* 
-          do 
-          (let ((webapp (ignore-errors (weblocks::find-app i))))
-            (when webapp 
-              (with-webapp webapp
-                (cl-who:htm 
-                  (:li 
-                    (str (weblocks::weblocks-webapp-name webapp))
-                    (:h2 :style "margin-left:20px;" "Sessions")
-                    (:ul
-                      (loop for i in (weblocks::active-sessions) do 
-                            (cl-who:htm 
-                              (:li (cl-who:fmt 
-                                     "id - ~A &nbsp;" 
-                                     (hunchentoot:session-id i))
-                               (:a :href (add-get-param-to-url 
-                                           (make-action-url "remove-session")
-                                           "id"
-                                           (write-to-string (hunchentoot:session-id i)))
-                                :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: '~A'}); return false;"
-                                                 "remove-session" (session-name-string-pair) (hunchentoot:session-id i))
-                                "Remove session")
-                               (:h3 "session data")
-                               (:ul
-                                 (let ((session-data (weblocks::webapp-session-hash i)))
-                                   (when session-data 
-                                     (loop for i from 1
-                                           for key being the hash-key of session-data 
-                                           for value being the hash-value of session-data 
-                                           do 
-                                           (cl-who:htm 
-                                             (:li 
-                                               (str i)
-                                               (:br)
-                                               (str key)
-                                               (:br)
-                                               (cl-who:esc (prin1-to-string value))))))))))))))))))))
+
+(defstore 
+  *list-store* 
+  :custom 
+  :classes 
+  (list 
+    'webapp-cls 
+    (list
+      :object-id (lambda (item item-data)
+                   (weblocks::weblocks-webapp-name item-data))
+      :slots (list 
+               (list 
+                 'title 
+                 (lambda (item item-data)
+                   (weblocks::weblocks-webapp-name item-data))))
+      :find-all-objects (lambda ()
+                          (remove-if #'null (loop for i in weblocks::*registered-webapps* collect (ignore-errors (weblocks::find-app i))))))
+    'session-cls 
+    (list 
+      :object-id (lambda (item item-data)
+                   (format nil "~A-~A"
+                           (weblocks::weblocks-webapp-name (slot-value (getf item-data :app) 'weblocks-custom::data))
+                           (hunchentoot:session-id (getf item-data :session))))
+      :slots (list 
+               (list 
+                 'string-id 
+                 (lambda (item item-data)
+                   (format nil "~A-session-~A"
+                           (weblocks::weblocks-webapp-name (slot-value (getf item-data :app) 'weblocks-custom::data))
+                           (hunchentoot:session-id (getf item-data :session)))))
+               (list 'hunchentoot-session-id
+                    (lambda (item item-data)
+                      (hunchentoot:session-id (getf item-data :session))))
+               (list 
+                 'webapp 
+                 (lambda (item item-data)
+                   (getf item-data :app)))
+               (list 'session 
+                     (lambda (item item-data)
+                       (getf item-data :session))))
+      :find-all-objects (lambda ()
+                          (loop for i in (all-of 'webapp-cls :store *list-store*) append 
+                                (with-webapp (slot-value i 'weblocks-custom::data)
+                                  (loop for j in (weblocks::active-sessions) 
+                                        collect (list :session j :app i))))))
+    'session-data-cls
+    (list 
+      :object-id (lambda (item item-data)
+                   (format nil "~A-~A-~A"
+                           (weblocks::weblocks-webapp-name (slot-value (slot-value (getf item-data :session) 'webapp) 'weblocks-custom::data))
+                           (hunchentoot:session-id (slot-value (getf item-data :session) 'session))
+                           (getf item-data :key)))
+                   
+      :slots (list 
+               (list 
+                 'key 
+                 (lambda (item item-data)
+                   (getf item-data :key)))
+               (list 
+                 'value 
+                 (lambda (item item-data)
+                   (getf item-data :value)))
+               (list 
+                 'session 
+                 (lambda (item item-data)
+                   (getf item-data :session))))
+      :find-all-objects (lambda ()
+                          (loop for i in (all-of 'session-cls :store *list-store*)
+                                append (with-webapp 
+                                         (slot-value (slot-value i 'webapp) 'weblocks-custom::data)
+                                         (let ((session-data (weblocks::webapp-session-hash (slot-value i 'session))))
+                                           (when session-data 
+                                             (loop for j from 1
+                                                   for key being the hash-key of session-data 
+                                                   for value being the hash-value of session-data 
+                                                   collect
+                                                   (list :key key :value value :session i))))))))))
+
+(defun tree-title (obj)
+  (typecase obj
+    (webapp-cls (object-id obj))
+    (session-cls (arnesi:escape-as-html (format nil " session #~A" (slot-value obj 'hunchentoot-session-id))))
+    (session-data-cls (arnesi:escape-as-html (format nil " key: ~A, value: - ~A" (slot-value obj 'key) (slot-value obj 'value))))))
 
 (defun init-user-session (root)
   (make-action #'remove-session-action "remove-session")
-  (setf (widget-children root)
-        (list (make-widget #'render-debug-output))))
+  (let ((tree-grid (make-instance 'tree-widget 
+                                  :class-store *list-store* 
+                                  :view (defview nil (:type tree)
+                                                 (weblocks-custom::data 
+                                                   :present-as (tree-branches :straight-column-captions nil)
+                                                   :reader (lambda (item)
+                                                             (tree-title item)))
+                                                 (action-buttons 
+                                                   :present-as html 
+                                                   :reader (lambda (item)
+                                                             (if (typep item 'session-cls)
+                                                               (weblocks::with-html-to-string 
+                                                                 (:a :href (add-get-param-to-url 
+                                                                             (make-action-url "remove-session")
+                                                                             "id"
+                                                                             (write-to-string (slot-value item 'hunchentoot-session-id)))
+                                                                  :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: '~A'}); return false;"
+                                                                                   "remove-session" (session-name-string-pair) (slot-value item 'hunchentoot-session-id))
+                                                                  "remove session"))
+
+                                                               ""))))
+                                  :data-class 'webapp-cls)))
+    (setf (widget-children root)
+          (list 
+            tree-grid))))
 
 (defun start-debug-app (&rest args)
   (apply #'start-weblocks args)
   (start-webapp 'debug-app))
+
+(defmethod tree-data ((obj tree-widget))
+  (loop for i in (all-of 'webapp-cls :store *list-store*) 
+        collect (list 
+                  :item i 
+                  :children (loop for j in 
+                                  (find-by-values 'session-cls 
+                                                  :webapp (cons i (lambda (item1 item2)
+                                                                    (string= (object-id item1) (object-id item2))))
+                                                  :store *list-store*) append 
+                                  (let ((item (list :item j 
+                                                    :children 
+                                                    (loop for i in 
+                                                          (find-by-values 
+                                                            'session-data-cls 
+                                                            :session (cons j (lambda (item1 item2)
+                                                                               (string= (object-id item1) (object-id item2)))) 
+                                                            :store *list-store*) 
+                                                          collect (list :item i)))))
+                                    (list item))))))

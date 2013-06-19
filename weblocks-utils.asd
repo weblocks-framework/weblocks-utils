@@ -6,11 +6,11 @@
 
 (defsystem weblocks-utils
      :name "Weblocks utils"
-     :version "0.3.4"
+     :version "0.3.5"
      :author "Olexiy Zamkoviy"
      :licence "Public Domain"
      :description "Utils for weblocks framework"
-     :depends-on (:weblocks :alexandria :weblocks-stores :clache)
+     :depends-on (:weblocks :alexandria :weblocks-stores :clache :weblocks-custom :weblocks-tree-widget :arnesi)
      :components ((:file "package")
          (:file "weblocks-utils" :depends-on ("package"))
          (:file "debug-utils" :depends-on ("package"))

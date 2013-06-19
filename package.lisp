@@ -1,5 +1,5 @@
 (defpackage #:weblocks-utils
-  (:use :cl :weblocks :weblocks-stores :clache)
+  (:use :cl :weblocks :weblocks-stores :clache :weblocks-tree-widget)
   (:documentation
     "Utility functions for weblocks framework")
   (:export 
