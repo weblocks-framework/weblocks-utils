@@ -31,5 +31,7 @@
     #:with-first-active-session 
     #:start-debug-app 
     #:with-object-cache
-    #:*default-cache-store*))
+    #:*default-cache-store* 
+    #:related-record-field
+    #:multiple-related-records-field))
 
