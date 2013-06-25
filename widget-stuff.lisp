@@ -19,7 +19,7 @@
                                     collect (cons (funcall ,title-function i) (object-id i)))))
      :parse-as checkboxes))
 
-; v4
+; v5
 (defun related-record-field (record title-function &optional body &key list-records-func (field-name record))
   "Makes it easy to connect two records, for example if we have catalog-item which has relation to manager following code will create view which has select with list of all managers, we can use it in catalog-item form
 
@@ -28,9 +28,9 @@
   `(,field-name 
      ,@body
      :writer (lambda (value item)
-               (when value
-                 (setf (slot-value item ',field-name)
-                     (first-by-values ',record :id (parse-integer value)))))
+               (setf (slot-value item ',field-name)
+                     (when value
+                       (first-by-values ',record :id (parse-integer value)))))
      :present-as (dropdown 
                    :choices 
                    (lambda (item)
