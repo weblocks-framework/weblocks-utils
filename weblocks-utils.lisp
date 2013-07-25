@@ -144,14 +144,16 @@
   (flet ((filter-by-values (object)
                            (loop for key in args by #'cddr do 
                                  (let ((value (getf args key))
-                                       (test-fun test))
+                                       (test-fun test)
+                                       (slot (intern (string  key) 
+                                                     (package-name (symbol-package (type-of object))))))
                                    (when (and (consp value) (functionp (cdr value)))
                                      (setf test-fun (cdr value))
                                      (setf value (car value)))
                                    (pushnew (list args *package*) *packages-used*)
-                                   (unless (funcall test-fun value (slot-value object 
-                                                                               (intern (string  key) 
-                                                                                       (package-name (symbol-package (type-of object))))))
+                                   (unless (funcall test-fun value 
+                                                    (when (slot-boundp object slot)
+                                                      (slot-value object slot)))
                                      (return-from filter-by-values nil))))
                            t))
 
