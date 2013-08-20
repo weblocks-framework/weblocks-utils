@@ -33,5 +33,6 @@
     #:with-object-cache
     #:*default-cache-store* 
     #:related-record-field
-    #:multiple-related-records-field))
+    #:multiple-related-records-field 
+    #:require-assets))
 
