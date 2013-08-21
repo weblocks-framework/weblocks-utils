@@ -142,9 +142,9 @@
 (defun serve-directory (url-or-dir &optional dir)
   (declare (special *assets-package-dir*))
 
-  (let* ((request-path (format nil "~A/" (prepend-webapp-path url-or-dir)))
+  (let* ((request-path (format nil "~A/" (prepend-webapp-path (or dir url-or-dir))))
          (directory (merge-pathnames 
-                      (make-pathname :directory (list* :relative (explode "/" (string-trim "/" (or dir url-or-dir)))))
+                      (make-pathname :directory (list* :relative (explode "/" (string-trim "/" url-or-dir))))
                       *assets-package-dir*))
          (path-and-dir  (cons request-path directory)))
 
