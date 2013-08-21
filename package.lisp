@@ -34,5 +34,6 @@
     #:*default-cache-store* 
     #:related-record-field
     #:multiple-related-records-field 
-    #:require-assets))
+    #:require-assets 
+    #:prepend-webapp-path))
 

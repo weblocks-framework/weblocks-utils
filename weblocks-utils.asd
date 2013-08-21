@@ -6,7 +6,7 @@
 
 (defsystem weblocks-utils
      :name "Weblocks utils"
-     :version "0.5.0"
+     :version "0.5.1"
      :author "Olexiy Zamkoviy"
      :licence "Public Domain"
      :description "Utils for weblocks framework"
@@ -17,5 +17,5 @@
          (:file "sessions-debug" :depends-on ("package" "debug-utils"))
          (:file "debug-app" :depends-on ("package" "debug-utils"))
          (:file "widget-stuff" :depends-on ("package"))
-         (:file "assets-packages")))
+         (:file "assets-packages" :depends-on ("weblocks-utils"))))
 

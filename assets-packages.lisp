@@ -171,11 +171,6 @@
           path)
         weblocks::*dispatch-table*))))
 
-(defun prepend-webapp-path (value)
-  (format nil "~A/~A" 
-          (string-right-trim "/" (weblocks::weblocks-webapp-prefix (current-webapp)))
-          (string-left-trim "/" value)))
-
 (defun load-serve-file (app file)
   (let ((*package* (find-package :weblocks-utils)))
     (with-webapp app
