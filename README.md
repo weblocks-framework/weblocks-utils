@@ -35,7 +35,8 @@ If our application/plugin/extension needs jQuery for normal work we need to put 
 ```
 
 and jQuery will be loaded into <getcwd>/assets/jquery-1.8.2/ and single file will be served from hunchentoot - /pub/scripts/jquery-1.8.2.js
-We can just include script with /pub/scripts/jquery-1.8.2.js somewhere.
+
+We can just include script with url /pub/scripts/jquery-1.8.2.js somewhere.
 
 Url we used here - https://raw.github.com/html/weblocks-assets/master/jquery/1.8.2/ is the url of *assets package*.
 
@@ -45,27 +46,46 @@ For example if our app has "/admin" prefix, code above will give us /admin/pub/s
 
 `weblocks-utils:prepend-webapp-path` is useful for loading files, we can include jQuery by creating following dependency
 
+```lisp
 (make-instance 'script-dependency 
- :url (make-instance 'puri:uri :path (weblocks-utils:prepend-webapp-path "/pub/scripts/jquery-1.8.2.js")))
+  :url (make-instance 'puri:uri 
+    :path (weblocks-utils:prepend-webapp-path "/pub/scripts/jquery-1.8.2.js")))
+```
 
+We'll receive following result inside application with prefix "/admin"
+
+```lisp
+(weblocks-utils:prepend-webapp-path "/pub/scripts/jquery-1.8.2.js") ; => /admin/pub/scripts/jquery-1.8.2.js
+```
 
 ### Assets Packages
 
 *Assets package* is small piece of code which will 
 
-* Download all needed files on demand
+* Download all necessary files on demand
 * Serve all necessary files and directories
 
 It contains 3 required files 
 
-* version.txt - text file with single line. Contains name of directory  which will be created inside of assets/. 
-  Also it describes package name and version. Inside of https://raw.github.com/html/weblocks-assets/master/jquery/1.8.2/version.txt 
+* version.txt - text file with single line. 
+
+  Contains name of directory  which will be created inside of assets/. 
+
+  Also it describes package name and version. 
+  
+  Inside of https://raw.github.com/html/weblocks-assets/master/jquery/1.8.2/version.txt 
   we have *jquery-1.8.2* and assets/jquery-1.8.2 directory will be created.
 
-* get.sh - a bash script for downloading needed stuff. It is executed from lisp during `require-assets` call and only when there is no package installed yet.
+* get.sh - a bash script for downloading needed stuff. 
+
+  It is executed from lisp during `require-assets` call and only when there is no package installed yet.
+
   You can go to assets/<package version> directory and evaluate bash get.sh if there will be problems with automatic installation.
 
-* serve.lisp  - contains lisp code for serving files and directories. Use function `serve-file` for serving files and `serve-directory` for directories.
+* serve.lisp  - contains lisp code for serving files and directories. 
+
+  Use function `serve-file` for serving files and `serve-directory` for directories.
+
 
 Any url which contains these files can be used as *assets package* so anybody can create own *assets packages* and *assets packages repository*.
 
@@ -80,16 +100,17 @@ It is used in
 
 ### Creating own Assets Packages and Assets Repositories
 
-Any http server is suitable for serving *assets packages*. I'm using github for these purposes since it allows to view repository files through http.
+Any http server is suitable for serving *assets packages*. I'm using Github for these purposes since it allows to view repository files through http.
 
 To create *assets package* you should create directory with files described above and to publish it.
 
-For every version of software used you should create own *assets package*.
+#### For every version of software used you should create own *assets package*.
 
 For example if I need to update some code for using jquery-seq 0.0.3 instead of 0.0.1, I'm creating *assets package* jquery-seq/0.0.3 in https://github.com/html/weblocks-assets 
+
 It is just a copy of jquery-seq/0.0.1 directory with changed version.txt and get.sh files.
 
-Every *assets package* should download specific version of software.
+#### Every *assets package* should download specific version of software.
 
 We can see code
 
