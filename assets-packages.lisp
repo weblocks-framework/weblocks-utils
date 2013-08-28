@@ -103,6 +103,8 @@
       (merge-pathnames (make-pathname :name "get" :type "sh") dest))))
 
 (defun require-assets (url-or-file &key (webapp (current-webapp)))
+  "Tries to get assets package from url-or-file into <getcwd>/assets/<assets package version> directory 
+  and serves files from this directory by evaluating <getcwd>/assets/<assets package version>/serve.lisp file"
   (let* ((version (get-version url-or-file))
          (*assets-package-dir* (merge-pathnames (make-pathname :directory `(:relative  ,version)) *assets-directory*)))
 
@@ -140,6 +142,7 @@
     string))
 
 (defun serve-directory (url-or-dir &optional dir)
+  "Should be called from *assets package* serve.lisp file"
   (declare (special *assets-package-dir*))
 
   (let* ((request-path (format nil "~A/" (prepend-webapp-path (or dir url-or-dir))))
@@ -157,6 +160,7 @@
         weblocks::*dispatch-table*))))
 
 (defun serve-file (file &optional url)
+  "Should be called from *assets package* serve.lisp file"
   (let* ((request-path (prepend-webapp-path (or url file)))
          (path (merge-pathnames 
                  (parse-namestring file)
