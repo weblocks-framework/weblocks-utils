@@ -59,6 +59,7 @@
       (read in))))
 
 (defun set-versions (versions)
+  (ensure-directories-exist *assets-directory*)
   (with-open-file (out *versions-file* 
                        :direction :output 
                        :if-does-not-exist :create 
