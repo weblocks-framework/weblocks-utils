@@ -141,23 +141,29 @@
   "Returns items of specified class. Filters passed as key arguments (key is slot name, value is value compared). 
   :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
   (setf args (alexandria:remove-from-plist args :order-by :range :store))
-  (flet ((filter-by-values (object)
-                           (loop for key in args by #'cddr do 
-                                 (let ((value (getf args key))
-                                       (test-fun test)
-                                       (slot (intern (string  key) 
-                                                     (package-name (symbol-package (type-of object))))))
-                                   (when (and (consp value) (functionp (cdr value)))
-                                     (setf test-fun (cdr value))
-                                     (setf value (car value)))
-                                   (pushnew (list args *package*) *packages-used*)
-                                   (unless (funcall test-fun value 
-                                                    (when (slot-boundp object slot)
-                                                      (slot-value object slot)))
-                                     (return-from filter-by-values nil))))
-                           t))
+  (let ((filter-data 
+          (loop for key in args by #'cddr 
+                collect
+                (let ((value (getf args key))
+                      (test-fun test)
+                      (slot (intern (string  key) 
+                                    (package-name (symbol-package class)))))
 
-    (find-persistent-objects store class :filter #'filter-by-values :order-by order-by :range range)))
+                  (when (and (consp value) (functionp (cdr value)))
+                    (setf test-fun (cdr value))
+                    (setf value (car value)))
+                  (pushnew (list args *package*) *packages-used*)
+                  (list test-fun slot value)))))
+
+    (flet ((filter-by-values (object)
+             (loop for (test-fun slot value) in filter-data do 
+                   (unless (funcall test-fun value 
+                                    (when (slot-boundp object slot)
+                                      (slot-value object slot)))
+                     (return-from filter-by-values nil)))
+             t))
+
+      (find-persistent-objects store class :filter #'filter-by-values :order-by order-by :range range))))
 
 (defun first-by-values (&rest args)
   "Similar to 'find-by-values' but returns only first item"
