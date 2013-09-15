@@ -7,10 +7,13 @@
            :autostart nil                   ;; have to start the app manually
            :debug t)
 
+(defparameter weblocks-util:*process-html-parts-p* 
+  (lambda ()
+    (not (typep (weblocks:current-webapp) 'debug-app))))
+
 (defun remove-session-action (&rest args &key id action)
   (hunchentoot:remove-session (hunchentoot::get-stored-session (parse-integer id)))
   (redirect (weblocks::weblocks-webapp-prefix (weblocks::current-webapp))))
-
 
 (defstore 
   *list-store* 
@@ -99,6 +102,7 @@
   (make-action #'remove-session-action "remove-session")
   (let ((tree-grid (make-instance 'tree-widget 
                                   :class-store *list-store* 
+                                  :allow-add-p nil
                                   :view (defview nil (:type tree)
                                                  (weblocks-custom::data 
                                                    :present-as (tree-branches :straight-column-captions nil)
@@ -120,8 +124,36 @@
                                                                ""))))
                                   :data-class 'webapp-cls)))
     (setf (widget-children root)
-          (list 
-            tree-grid))))
+          (make-navigation 
+            "toplevel"
+            (list "Debug sessions" 
+                  (make-instance 'composite 
+                                 :widgets (list 
+                                            (lambda (&rest args)
+                                              (with-html 
+                                                (:h1 "Debug sessions")
+                                                (:b "Here is debug tree with applications (1st level), application sessions (2nd level) and application session values (3rd level)")
+                                                (:br)
+                                                (:br)))
+                                            tree-grid)) nil)
+            (list "Debug page" (make-instance 
+                                 'composite 
+                                 :widgets (list 
+                                            (lambda (&rest args)
+                                              (with-html 
+                                                (:h1 "Debug page")
+                                                (:b "Here is debug tree with rendered page parts.")
+                                                (:div :id "eval-message" :style "display:none"
+                                                 (:br)
+                                                 (:b "Evaluate "
+                                                  (:br)
+                                                  "&nbsp;&nbsp;"
+                                                  (:i (str (ps:ps (window.open "/debug-app/debug-page"))))
+                                                  (:br)
+                                                  "on your Weblocks-powered page to receive debugging page mirror below. This page than can be closed."))
+                                                (:br)
+                                                (:br)))
+                                            'render-debug-page-tree)) "debug-page")))))
 
 (defun start-debug-app (&rest args)
   (apply #'start-weblocks args)
