@@ -150,7 +150,7 @@
                                                   "&nbsp;&nbsp;"
                                                   (:i (str (ps:ps (window.open "/debug-app/debug-page"))))
                                                   (:br)
-                                                  "on your Weblocks-powered page to receive debugging page mirror below. This page than can be closed."))
+                                                  "on your Weblocks-powered page to receive debugging page mirror below. This page then can be closed."))
                                                 (:br)
                                                 (:br)))
                                             'render-debug-page-tree)) "debug-page")))))
