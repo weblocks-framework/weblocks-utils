@@ -78,7 +78,7 @@
   (send-script 
     (ps:ps 
       (unless window.opener 
-        (ps:chain (j-query "#eval-message") (show)))
+        (setf (ps:@ (document.get-element-by-id "eval-message") style display) "block"))
       (setf parent-doc window.opener.document.document-element)
       (setf j-query window.opener.j-query)
       (setf doc-root (ps:LISP (weblocks-util:get-html-parts-root-hash)))
