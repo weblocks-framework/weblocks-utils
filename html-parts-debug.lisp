@@ -38,11 +38,14 @@
             (let ((i-copy i))
               (render-link 
                 (lambda (&rest args)
+                  (declare (ignore args))
                   (mark-dirty (root-widget))
                   (do-page 
                     (make-widget 
                       (lambda/cc (&rest args)
+                                 (declare (ignore args))
                                  (let ((back-action (lambda (&rest args)
+                                                      (declare (ignore args))
                                                       (answer (first (widget-children (root-widget)))))))
                                    (with-html 
                                      (:h1 "Element context")
@@ -94,19 +97,19 @@
                     (cl-json:encode-json-to-string md5-hash)))))))
     (send-script 
       (ps:ps 
-        (unless window.opener 
-          (setf (ps:@ (document.get-element-by-id "eval-message") style display) "block"))
-        (setf parent-doc window.opener.document.document-element)
-        (setf j-query window.opener.j-query)
+        (unless (ps:@ window opener)
+          (setf (ps:@ ((ps:@ document get-element-by-id) "eval-message") style display) "block"))
+      (setf parent-doc (ps:@ window opener document document-element))
+      (setf j-query (ps:@ window opener j-query))
         (setf doc-root (ps:LISP (with-debugged-app-md5-hash (weblocks-util:get-html-parts-root-hash))))
 
         (defun get-dom-by-hash (hash)
           (if (string= hash doc-root)
             (j-query parent-doc) 
             (ps:chain 
-              (get-similar-elements (j-query (slot-value (slot-value document-data hash) 0))))))
+              (get-similar-elements (j-query (ps:getprop (ps:getprop document-data hash) 0))))))
 
-        (setf j-query.fn.elements-with-same-id 
+        (setf (ps:@ j-query fn elements-with-same-id) 
               (lambda ($item)
                 (ps:chain (j-query this)
                           (find 
@@ -114,7 +117,7 @@
                                          "#"
                                          (ps:chain $item (attr "id")))))))
 
-        (setf j-query.fn.elements-with-same-name 
+        (setf (ps:@ j-query fn elements-with-same-name) 
               (lambda ($item)
                 (ps:chain (j-query this)
                           (find 
@@ -123,32 +126,32 @@
                                          (ps:chain $item (attr "name"))
                                          "]")))))
 
-        (setf j-query.fn.elements-with-same-classes 
+        (setf (ps:@ j-query fn elements-with-same-classes) 
               (lambda ($item)
                 (let* ((classes (ps:chain $item (attr "class") (split (ps:regex "\\s+"))))
                        (ret (ps:chain 
                               (j-query this)
-                              (find (concatenate 'string "." (slot-value classes 0))))))
+                              (find (concatenate 'string "." (ps:aref classes 0))))))
 
                   (loop for i in (ps:chain classes (slice 1)) do
                         (setf ret (ps:chain ret (filter (concatenate 'string "." i)))))
 
                   ret)))
 
-        (setf j-query.fn.outer-h-t-m-l 
+        (setf (ps:@ j-query fn outer-h-t-m-l) 
               (lambda()
                 (when (> (length this) 1)
-                  (console.log "TODO: Unsupported length"))
-                (ps:chain (slot-value this 0) outer-h-t-m-l)))
+                  ((ps:@ console log) "TODO: Unsupported length"))
+                (ps:chain (ps:aref this 0) outer-h-t-m-l)))
 
-        (setf j-query.fn.remove-style-attr-recursively
+        (setf (ps:@ j-query fn remove-style-attr-recursively)
               (lambda()
                 (ps:chain (j-query this) 
                           (remove-attr "style") 
                           (find "*") (remove-attr "style")
                           (end))))
 
-        (setf j-query.fn.elements-with-same-html 
+        (setf (ps:@ j-query fn elements-with-same-html) 
               (lambda ($item)
                 (let* ((html (ps:chain $item (outer-h-t-m-l))))
                   (ps:chain 
@@ -163,52 +166,52 @@
                                                  (remove-style-attr-recursively)
                                                  (outer-h-t-m-l)))))))))
 
-        (defun get-similar-elements (elem)
-          (let ((similar-elements-return (array)))
-            (ps:chain 
+      (defun get-similar-elements (elem)
+        (let ((similar-elements-return (array)))
+          (ps:chain  
               elem 
               (map 
                 (lambda (key item)
                   (setf $item (j-query item))
                   (cond 
                     ((ps:chain $item (attr "id")) 
-                     (similar-elements-return.push 
-                       (slot-value 
-                         (ps:chain 
-                           (j-query parent-doc)
-                           (elements-with-same-id $item))
-                         0)))
+                     ((ps:@ similar-elements-return push) 
+                      (ps:getprop 
+                        (ps:chain 
+                          (j-query parent-doc)
+                          (elements-with-same-id $item))
+                        0)))
                     ((ps:chain $item (attr "name"))
                      (let ((elements (ps:chain 
                                        (j-query parent-doc)
                                        (elements-with-same-name $item))))
                        (if (= (length elements) 1)
-                         (similar-elements-return.push (slot-value elements 0))
-                         (console.log "TODO, multiple elements with name" elements))))
+                         ((ps:@ similar-elements-return push) (ps:aref elements 0))
+                         ((ps:@ console log) "TODO, multiple elements with name" elements))))
                     ((ps:chain $item (attr "class"))
                      (let ((elements (ps:chain 
                                        (j-query parent-doc)
                                        (elements-with-same-classes $item))))
                        (if (= (length elements) 1)
-                         (similar-elements-return.push (slot-value elements 0))
+                         ((ps:@ similar-elements-return push) (ps:aref elements 0))
                          (progn 
                            (setf elements (ps:chain (j-query elements)
                                                     (elements-with-same-html $item)))
 
                            (if (= (length elements) 1)
-                             (similar-elements-return.push (slot-value elements 0))
-                             (setf similar-elements-return (similar-elements-return.concat (j-query.make-array elements))))))))
+                             ((ps:@ similar-elements-return push) (ps:aref elements 0))
+                             (setf similar-elements-return ((ps:@ similar-elements-return concat) ((ps:@ j-query make-array) elements))))))))
 
-                    (t (let ((tags (window.opener.document.get-elements-by-tag-name 
-                                     (ps:chain item tag-name (to-lower-case))))
-                             (ret))
+                    (t (let ((tags ((ps:@ window opener document get-elements-by-tag-name) 
+                                   (ps:chain item tag-name (to-lower-case))))
+                           (ret))
 
-                         (setf ret (ps:chain (j-query tags)
-                                             (elements-with-same-html $item)))
+                       (setf ret (ps:chain (j-query tags)
+                                           (elements-with-same-html $item)))
 
-                         (if (= (length ret) 1)
-                           (similar-elements-return.push (slot-value ret 0))
-                           (setf similar-elements-return (similar-elements-return.concat (j-query.make-array ret))))))))))
+                       (if (= (length ret) 1)
+                         ((ps:@ similar-elements-return push) (ps:aref ret 0))
+                         (setf similar-elements-return ((ps:@ similar-elements-return concat) ((ps:@ j-query make-array) ret))))))))))
             similar-elements-return))
 
         (defun remove-generated-elements ()
@@ -216,64 +219,67 @@
 
         (defun show-element-rect-on-user-page(elems)
           (remove-generated-elements)
+
+          (defun show-single-element-rect-on-user-page ()
+            (setf elem (j-query this))
+            (let ((offset (ps:chain elem (offset)))
+                  (width (ps:chain elem (outer-width)))
+                  (height (ps:chain elem (outer-height)))
+                  (head-element-p (ps:chain elem (parents "head") length)))
+
+              (setf elem (ps:chain 
+                           (j-query "<div/>")
+                           (add-class "generated")
+                           (css "width" width)
+                           (css "height" height)
+                           (css "position" "absolute")
+                           (css "opacity" "0.5")
+                           (css "filter" "alpha(opacity=100)")
+                           (css "top" (ps:getprop offset 'top))
+                           (css "left" (ps:getprop offset 'left))
+                           (css "background-color" "black")
+                           (click (lambda ()
+                                    (remove-generated-elements)))))
+
+              (cond 
+                (head-element-p
+                  (progn 
+                    (when (ps:chain (j-query ".generated.head")  length)
+                      (ps:return-from show-single-element-rect-on-user-page))
+                    (ps:chain elem (add-class "head") 
+                              (width "200")
+                              (height "35")
+                              (css "left" "50%")
+                              (css "margin-left" "-100px")
+                              (css "color" "white")
+                              (css "padding-top" "15px")
+                              (css "text-align" "center")
+                              (html "<i>&lt; head element &gt; </i>"))))
+                ((or (< width 10) (< height 10))
+                 (progn 
+                   (ps:chain elem (css "border" "1px dashed black"))
+                   (ps:chain 
+                     (j-query "<div/>")
+                     (add-class "generated")
+                     (css "width" (if (< width 10) "50" width))
+                     (css "height" (if (< height 10) "50" height))
+                     (css "position" "absolute")
+                     (css "opacity" "0.2")
+                     (css "filter" "alpha(opacity=100)")
+                     (css "top" (+ (ps:getprop offset 'top) (if (< height 10) -25 0)))
+                     (css "left" (+ (ps:getprop offset 'left) (if (< width 10) -25 0)))
+                     (css "background-color" "black")
+                     (html "Here")
+                     (click (lambda ()
+                              (remove-generated-elements)))
+                     (append-to window.opener.document.body)))))
+
+              (ps:chain elem (append-to window.opener.document.body))
+              elem))
+
           (ps:chain 
             (j-query elems)  
-            (each (lambda ()
-                    (setf elem (j-query this))
-                    (let ((offset (ps:chain elem (offset)))
-                          (width (ps:chain elem (outer-width)))
-                          (height (ps:chain elem (outer-height)))
-                          (head-element-p (ps:chain elem (parents "head") length)))
-
-                      (setf elem (ps:chain 
-                                   (j-query "<div/>")
-                                   (add-class "generated")
-                                   (css "width" width)
-                                   (css "height" height)
-                                   (css "position" "absolute")
-                                   (css "opacity" "0.5")
-                                   (css "filter" "alpha(opacity=100)")
-                                   (css "top" (slot-value offset 'top))
-                                   (css "left" (slot-value offset 'left))
-                                   (css "background-color" "black")
-                                   (click (lambda ()
-                                            (remove-generated-elements)))))
-
-                      (cond 
-                        (head-element-p
-                          (progn 
-                            (when (ps:chain (j-query ".generated.head")  length)
-                              (return))
-                            (ps:chain elem (add-class "head") 
-                                      (width "200")
-                                      (height "35")
-                                      (css "left" "50%")
-                                      (css "margin-left" "-100px")
-                                      (css "color" "white")
-                                      (css "padding-top" "15px")
-                                      (css "text-align" "center")
-                                      (html "<i>&lt; head element &gt; </i>"))))
-                        ((or (< width 10) (< height 10))
-                         (progn 
-                           (ps:chain elem (css "border" "1px dashed black"))
-                           (ps:chain 
-                             (j-query "<div/>")
-                             (add-class "generated")
-                             (css "width" (if (< width 10) "50" width))
-                             (css "height" (if (< height 10) "50" height))
-                             (css "position" "absolute")
-                             (css "opacity" "0.2")
-                             (css "filter" "alpha(opacity=100)")
-                             (css "top" (+ (slot-value offset 'top) (if (< height 10) -25 0)))
-                             (css "left" (+ (slot-value offset 'left) (if (< width 10) -25 0)))
-                             (css "background-color" "black")
-                             (html "Here")
-                             (click (lambda ()
-                                      (remove-generated-elements)))
-                             (append-to window.opener.document.body)))))
-
-                      (ps:chain elem (append-to window.opener.document.body))
-                      elem)))))
+            (each #'show-single-element-rect-on-user-page)))
 
         (defun show-element-rect-on-debug-page(elems)
           (let* (($page-mirror-div (ps:chain (j-query document) (find  "#page-mirror")))
@@ -284,39 +290,41 @@
             (defun with-translated-size(some-value)
               (* debug-div-to-user-page-width-relation some-value))
 
+            (defun show-single-element-rect()
+              (setf elem (j-query this))
+              (let ((offset (ps:chain elem (offset)))
+                    (width (with-translated-size (ps:chain elem (outer-width))))
+                    (height (with-translated-size (ps:chain elem (outer-height))))
+                    (head-element-p (ps:chain elem (parents "head") length)))
+
+                (unless offset 
+                  (ps:return-from show-single-element-rect))
+
+                (setf elem (ps:chain 
+                             (j-query "<div/>")
+                             (add-class "generated")
+                             (css "width" width)
+                             (css "height" height)
+                             (css "position" "absolute")
+                             (css "opacity" "0.2")
+                             (css "filter" "alpha(opacity=100)")
+                             (css "top" (with-translated-size (ps:getprop offset 'top)))
+                             (css "left" (with-translated-size (ps:getprop offset 'left)))
+                             (css "background-color" "black")
+                             (click (lambda ()
+                                      (remove-generated-elements)))))
+
+                (cond 
+                  (head-element-p (ps:return-from show-single-element-rect nil))
+                  ((or (< width 10) (< height 10))
+                   (ps:return-from show-single-element-rect nil)))
+
+                (ps:chain elem (append-to $page-mirror-div))
+                elem))
+
             (ps:chain 
               (j-query elems)  
-              (each (lambda ()
-                      (setf elem (j-query this))
-                      (let ((offset (ps:chain elem (offset)))
-                            (width (with-translated-size (ps:chain elem (outer-width))))
-                            (height (with-translated-size (ps:chain elem (outer-height))))
-                            (head-element-p (ps:chain elem (parents "head") length)))
-
-                        (unless offset 
-                          (return))
-
-                        (setf elem (ps:chain 
-                                     (j-query "<div/>")
-                                     (add-class "generated")
-                                     (css "width" width)
-                                     (css "height" height)
-                                     (css "position" "absolute")
-                                     (css "opacity" "0.2")
-                                     (css "filter" "alpha(opacity=100)")
-                                     (css "top" (with-translated-size (slot-value offset 'top)))
-                                     (css "left" (with-translated-size (slot-value offset 'left)))
-                                     (css "background-color" "black")
-                                     (click (lambda ()
-                                              (remove-generated-elements)))))
-
-                        (cond 
-                          (head-element-p (return nil))
-                          ((or (< width 10) (< height 10))
-                           (return nil)))
-
-                        (ps:chain elem (append-to $page-mirror-div))
-                        elem))))))
+              (each #'show-single-element-rect))))
 
         (defun show-element-rect (elems)
           ;(show-element-rect-on-debug-page elems)
@@ -330,6 +338,7 @@
 
 (defun render-debug-page-tree (&rest args)
   "Renders debug page interface - scripts, html for page mirror widget and html parts tree"
+  (declare (ignore args))
   (render-debug-page-ps)
   (with-html 
     (:div :style "clear:both")
@@ -337,6 +346,7 @@
      (:div :style "float:right"
       (render-link 
         (lambda (&rest args)
+          (declare (ignore args))
           (do-information 
             "This is the \"mirror\" of html parts page contained - a visual representation of the right tree.")) "( i )"))
      (:div :style "clear:both")
@@ -344,6 +354,7 @@
     (:div :style "float:left;width:45%"
      (:div :style "float:right;" 
       (render-link (lambda (&rest args)
+                     (declare (ignore args))
                      (do-information 
                        "This is a tree of html parts page consists. Under parts related to Weblocks templates there are template names. For more information about html part click info, for highlighting part on the parent page click on the part link, return to parent page to see result"
 
