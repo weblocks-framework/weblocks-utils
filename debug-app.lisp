@@ -136,24 +136,47 @@
                                                 (:br)
                                                 (:br)))
                                             tree-grid)) nil)
-            (list "Debug page" (make-instance 
-                                 'composite 
-                                 :widgets (list 
-                                            (lambda (&rest args)
-                                              (with-html 
-                                                (:h1 "Debug page")
-                                                (:b "Here is debug tree with rendered page parts.")
-                                                (:div :id "eval-message" :style "display:none"
-                                                 (:br)
-                                                 (:b "Evaluate "
-                                                  (:br)
-                                                  "&nbsp;&nbsp;"
-                                                  (:i (str (ps:ps (window.open "/debug-app/debug-page"))))
-                                                  (:br)
-                                                  "on your Weblocks-powered page to receive debugging page mirror below. This page then can be closed."))
-                                                (:br)
-                                                (:br)))
-                                            'render-debug-page-tree)) "debug-page")))))
+            (list "Debug page" 
+                  (eval 
+                    `(make-navigation 
+                       "debug page"
+                       ,@(loop for i in weblocks::*active-webapps* 
+                               unless (string= "debug-app" (weblocks::weblocks-webapp-name i))
+                               collect `(list (weblocks::weblocks-webapp-name ,i)
+                                              (make-instance 
+                                                'composite 
+                                                :widgets (list 
+                                                           (lambda (&rest args)
+                                                             (with-html 
+                                                               (:h1 "Debug page"))
+                                                             (let ((*html-parts-debug-app* ,(alexandria:make-keyword 
+                                                                                              (string-upcase 
+                                                                                                (weblocks::weblocks-webapp-name i)))))
+                                                               (if (with-debugged-app-md5-hash 
+                                                                     (ignore-errors (weblocks-util:get-html-parts-root-hash)))
+                                                                 (progn 
+                                                                   (with-html 
+                                                                     (:b "Here is debug tree with rendered page parts.")
+                                                                     (:div :id "eval-message" :style "display:none"
+                                                                      (:br)
+                                                                      (:b "Evaluate "
+                                                                       (:br)
+                                                                       "&nbsp;&nbsp;"
+                                                                       (:i (str (ps:ps 
+                                                                                  ((ps:@ window open) 
+                                                                                   (ps:LISP ,(format nil "/debug-app/debug-page/~A" (weblocks::webapp-name i)))))))
+                                                                       (:br)
+                                                                       (cl-who:fmt 
+                                                                         "on your Weblocks-powered page of application ~A to receive debugging page mirror below. This page then can be closed." ,(weblocks::webapp-name i))))
+                                                                     (:br)
+                                                                     (:br))
+                                                                   (render-debug-page-tree))
+                                                                 (with-html 
+                                                                   "It seems "
+                                                                   (:b (str (weblocks::weblocks-webapp-name ,i)))
+                                                                   " is not started yet. Please open its url in browser"))))))
+                                              (attributize-name (weblocks::weblocks-webapp-name ,i))))))
+                   "debug-page")))))
 
 (defun start-debug-app (&rest args)
   (apply #'start-weblocks args)
