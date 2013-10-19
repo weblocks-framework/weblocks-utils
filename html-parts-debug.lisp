@@ -17,7 +17,8 @@
     (ppcre:regex-replace-all " " str "&nbsp;")))
 
 (defmacro with-debugged-app-md5-hash (&body body)
-  `(let ((weblocks-util::*parts-md5-hash* (get-debugged-application-md5-hash)))
+  `(let ((weblocks-util::*parts-md5-hash* (get-debugged-application-md5-hash))
+         (weblocks-util::*parts-md5-context-hash* (get-debugged-application-md5-context-hash)))
      ,@body))
 
 (defun print-tree (&key (indent 0) (children nil))
@@ -64,11 +65,25 @@
                                      (render-link back-action "back")))))))
                 "info"))
             (let ((type (getf (with-debugged-app-md5-hash (weblocks-util:get-html-part-context i)) :type)))
-              (when (and type (equal type :template))
-                (html-newline-and-indent)
-                (cl-who:htm 
-                  (:i :style "text-align:right;"
-                   (str (string-downcase (prin1-to-string (getf (with-debugged-app-md5-hash (weblocks-util:get-html-part-context i)) :template-name)))))))))
+              (case type 
+                (:template 
+                  (html-newline-and-indent)
+                  (cl-who:htm 
+                    "Weblocks template "
+                    (:b 
+                      (:i :style "text-align:right;"
+                       (str (string-downcase (prin1-to-string (getf (with-debugged-app-md5-hash (weblocks-util:get-html-part-context i)) :template-name))))))))
+                (:widget 
+                  (html-newline-and-indent)
+                  (cl-who:htm 
+                    "Widget of type "
+                    (:b 
+                      (:i :style "text-align:right;"
+                       (str (string-downcase (prin1-to-string (type-of (getf (with-debugged-app-md5-hash (weblocks-util:get-html-part-context i)) :widget)))))))
+                    ", "
+                    (:b 
+                      (:i :style "text-align:right;"
+                       (cl-who:esc (string-downcase (prin1-to-string (getf (with-debugged-app-md5-hash (weblocks-util:get-html-part-context i)) :widget)))))))))))
           (print-tree :indent (+ indent 2)
             :children (with-debugged-app-md5-hash (weblocks-util:get-html-part-children i))))))
 
@@ -81,6 +96,15 @@
       (with-first-active-session 
         (webapp-session-value 
           'weblocks::parts-md5-hash 
+          weblocks::*session*
+          (weblocks::find-app *html-parts-debug-app*))))))
+
+(defun get-debugged-application-md5-context-hash ()
+  (when *html-parts-debug-app* 
+    (weblocks:with-webapp (weblocks::find-app *html-parts-debug-app*)
+      (with-first-active-session 
+        (webapp-session-value 
+          'weblocks::parts-md5-context-hash 
           weblocks::*session*
           (weblocks::find-app *html-parts-debug-app*))))))
 
@@ -98,12 +122,21 @@
     (send-script 
       (ps:ps 
         (unless (ps:@ window opener)
-          (setf (ps:@ ((ps:@ document get-element-by-id) "eval-message") style display) "block"))
-      (setf parent-doc (ps:@ window opener document document-element))
-      (setf j-query (ps:@ window opener j-query))
+          (setf (ps:@ ((ps:@ document get-element-by-id) "eval-message") style display) "block")
+          (set-timeout 
+            (lambda () 
+              (ps:chain ($ "page-mirror-container") (hide))
+              (setf (ps:chain ($ "page-tree") style width) "100%"))
+            0))
+        (setf parent-doc (ps:@ window opener document document-element))
+        (setf j-query (ps:@ window opener j-query))
         (setf doc-root (ps:LISP (with-debugged-app-md5-hash (weblocks-util:get-html-parts-root-hash))))
 
         (defun get-dom-by-hash (hash)
+          (when (string= "undefined" (ps:typeof doc-root))
+            (alert "Visual page debugging is not available yet. See instructions above for page debugging")
+            (return-from get-dom-by-hash))
+
           (if (string= hash doc-root)
             (j-query parent-doc) 
             (ps:chain 
@@ -166,9 +199,9 @@
                                                  (remove-style-attr-recursively)
                                                  (outer-h-t-m-l)))))))))
 
-      (defun get-similar-elements (elem)
-        (let ((similar-elements-return (array)))
-          (ps:chain  
+        (defun get-similar-elements (elem)
+          (let ((similar-elements-return (array)))
+            (ps:chain  
               elem 
               (map 
                 (lambda (key item)
@@ -203,15 +236,15 @@
                              (setf similar-elements-return ((ps:@ similar-elements-return concat) ((ps:@ j-query make-array) elements))))))))
 
                     (t (let ((tags ((ps:@ window opener document get-elements-by-tag-name) 
-                                   (ps:chain item tag-name (to-lower-case))))
-                           (ret))
+                                    (ps:chain item tag-name (to-lower-case))))
+                             (ret))
 
-                       (setf ret (ps:chain (j-query tags)
-                                           (elements-with-same-html $item)))
+                         (setf ret (ps:chain (j-query tags)
+                                             (elements-with-same-html $item)))
 
-                       (if (= (length ret) 1)
-                         ((ps:@ similar-elements-return push) (ps:aref ret 0))
-                         (setf similar-elements-return ((ps:@ similar-elements-return concat) ((ps:@ j-query make-array) ret))))))))))
+                         (if (= (length ret) 1)
+                           ((ps:@ similar-elements-return push) (ps:aref ret 0))
+                           (setf similar-elements-return ((ps:@ similar-elements-return concat) ((ps:@ j-query make-array) ret))))))))))
             similar-elements-return))
 
         (defun remove-generated-elements ()
@@ -342,23 +375,23 @@
   (render-debug-page-ps)
   (with-html 
     (:div :style "clear:both")
-    (:div :style "float:left;width:55%;position:relative;min-height:10px;"
+    (:div :id "page-mirror-container" :style "float:left;width:55%;position:relative;min-height:10px;"
      (:div :style "float:right"
       (render-link 
         (lambda (&rest args)
           (declare (ignore args))
           (do-information 
-            "This is the \"mirror\" of html parts page contained - a visual representation of the right tree.")) "( i )"))
+            "This is the \"mirror\" of html parts page contained - a visual representation of the right tree.")) "( &#8505; )"))
      (:div :style "clear:both")
      (:div :id "page-mirror" :style "position:relative;width:100%;"))
-    (:div :style "float:left;width:45%"
+    (:div :id "page-tree" :style "float:left;width:45%"
      (:div :style "float:right;" 
       (render-link (lambda (&rest args)
                      (declare (ignore args))
                      (do-information 
-                       "This is a tree of html parts page consists. Under parts related to Weblocks templates there are template names. For more information about html part click info, for highlighting part on the parent page click on the part link, return to parent page to see result"
+                       "This is a tree of html parts page consists. For more information about html part click info, for highlighting part on the parent page click on the part link, return to parent page to see result"
 
-                       )) "( i )"))
+                       )) "( &#8505; )"))
      (:br)
      (print-tree :children (list (with-debugged-app-md5-hash (weblocks-util:get-html-parts-root-hash)))))
     (:div :style "clear:both")))

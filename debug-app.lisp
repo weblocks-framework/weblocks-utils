@@ -132,7 +132,9 @@
                                             (lambda (&rest args)
                                               (with-html 
                                                 (:h1 "Debug sessions")
-                                                (:b "Here is debug tree with applications (1st level), application sessions (2nd level) and application session values (3rd level)")
+                                                (:span :style "font-family:monospace"
+                                                 "[&#8505;] "
+                                                 (:i "This is debug tree with applications (1st level), application sessions (2nd level) and application session values (3rd level)"))
                                                 (:br)
                                                 (:br)))
                                             tree-grid)) nil)
@@ -156,25 +158,30 @@
                                                                      (ignore-errors (weblocks-util:get-html-parts-root-hash)))
                                                                  (progn 
                                                                    (with-html 
-                                                                     (:b "Here is debug tree with rendered page parts.")
-                                                                     (:div :id "eval-message" :style "display:none"
+                                                                     (:span :style "font-family:monospace"
+                                                                      "[&#8505;] "
+                                                                      (:i "This is debug tree with rendered page parts from last page render."))
+                                                                     (:div :id "eval-message" :style "display:none;font-family:monospace"
                                                                       (:br)
-                                                                      (:b "Evaluate "
+                                                                      "[&#8505;] "
+                                                                      (:i "Evaluate "
                                                                        (:br)
                                                                        "&nbsp;&nbsp;"
-                                                                       (:i (str (ps:ps 
+                                                                       (:b (str (ps:ps 
                                                                                   ((ps:@ window open) 
                                                                                    (ps:LISP ,(format nil "/debug-app/debug-page/~A" (weblocks::webapp-name i)))))))
                                                                        (:br)
                                                                        (cl-who:fmt 
-                                                                         "on your Weblocks-powered page of application ~A to receive debugging page mirror below. This page then can be closed." ,(weblocks::webapp-name i))))
+                                                                         "on your Weblocks-powered page of application ~A to receive debugging page mirror below (useful for visual debugging). This page then can be closed." ,(weblocks::webapp-name i))))
                                                                      (:br)
                                                                      (:br))
                                                                    (render-debug-page-tree))
                                                                  (with-html 
-                                                                   "It seems "
-                                                                   (:b (str (weblocks::weblocks-webapp-name ,i)))
-                                                                   " is not started yet. Please open its url in browser"))))))
+                                                                   (:span :style "font-family:monospace"
+                                                                    "[&#8505;] "
+                                                                    (:i "It seems "
+                                                                     (:b (str (weblocks::weblocks-webapp-name ,i)))
+                                                                     " is not started yet. Please open its url in browser"))))))))
                                               (attributize-name (weblocks::weblocks-webapp-name ,i))))))
                    "debug-page")))))
 
