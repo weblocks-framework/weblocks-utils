@@ -9,7 +9,9 @@
 
 (defparameter weblocks-util:*process-html-parts-p* 
   (lambda ()
-    (not (typep (weblocks:current-webapp) 'debug-app))))
+    (and 
+      (ignore-errors (weblocks:current-webapp))
+      (not (typep (weblocks:current-webapp) 'debug-app)))))
 
 (defun remove-session-action (&rest args &key id action)
   (hunchentoot:remove-session (hunchentoot::get-stored-session (parse-integer id)))

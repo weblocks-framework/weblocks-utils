@@ -6,7 +6,7 @@
 
 (defsystem weblocks-utils
      :name "Weblocks utils"
-     :version "0.6.6"
+     :version "0.6.7"
      :author "Olexiy Zamkoviy"
      :licence "Public Domain"
      :description "Utils for weblocks framework"
