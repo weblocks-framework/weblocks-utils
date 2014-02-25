@@ -35,5 +35,8 @@
     #:related-record-field
     #:multiple-related-records-field 
     #:require-assets 
-    #:prepend-webapp-path))
+    #:prepend-webapp-path 
+    #:ps-with-scripts 
+    #:ps-with-styles
+    #:ps-with-scripts-and-styles))
 
