@@ -31,3 +31,13 @@
   `(progn 
      (enter-first-active-session)
      ,@body))
+
+(defun find-session-by-id (id)
+  (loop for i in (weblocks::active-sessions)
+        do (when (equal id (hunchentoot:session-id i))
+             (return-from find-session-by-id i))))
+
+(defmacro with-active-session-by-id ((id) &body body)
+  `(progn 
+     (in-session (hunchentoot:session-id (find-session-by-id ,id)))
+     ,@body))

@@ -129,6 +129,9 @@
   "Simple wrapper around 'find-persistent-objects', returns all elements of persistent class, useful when debugging."
   (find-persistent-objects (or store *default-store*) cls :order-by order-by :range range))
 
+(defun count-of (cls &key store)
+  (count-persistent-objects (or store *default-store*) cls))
+
 (defun first-of (cls &key order-by range (store *default-store*))
   "Returns first element of persistent class."
   (first (all-of cls :order-by order-by :range range :store store)))

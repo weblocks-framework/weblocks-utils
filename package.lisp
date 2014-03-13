@@ -10,6 +10,7 @@
     #:find-by 
     #:first-by 
     #:count-by 
+    #:count-of 
     #:all-of 
     #:find-by-values 
     #:first-by-values 
@@ -29,6 +30,7 @@
     #:debug-single-session 
     #:enter-first-active-session
     #:with-first-active-session 
+    #:with-active-session-by-id 
     #:start-debug-app 
     #:with-object-cache
     #:*default-cache-store* 
