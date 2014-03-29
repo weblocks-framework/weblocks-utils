@@ -21,9 +21,11 @@
     (and 
       (find-package 'clsql)
       (find-package 'clsql-fluid-bt)
-      (equal (type-of store) (intern "FLUID-DATABASE" "CLSQL-FLUID-BT")))))
+      (or 
+        (equal (type-of store) (intern "FLUID-DATABASE" "CLSQL-FLUID-BT"))
+        (typep store 'CLSQL-SYS:FLUID-DATABASE)))))
 
-(defun find-by-in-sql-store (class fun &key order-by range store)
+(defun find-by-in-sql-store (class fun &key order-by range (store *default-store*))
   (if (not range)
     (remove-if-not 
       fun 
@@ -85,11 +87,9 @@
               (incf (cdr new-range) needed-items-count)))
       result)))
 
-(defun find-by (class fun &key order-by range store)
+(defun find-by (class fun &key order-by range (store *default-store*))
   "Takes as arguments class and predicate and filters all data by predicate. For clsql store predicate also used though it is very slow.
    Also accepts :order-by and :range parameters which are equal to 'find-persistent-objects' ones and :store parameter which is equal to 'find-persistent-objects' first parameter."
-  (declare (special *default-store*))
-  (let ((store (or store *default-store*)))
     (cond 
       ((or (prevalence-poweredp :store store)
            (memory-poweredp :store store))
@@ -112,7 +112,7 @@
                                   :filter-fn 
                                   (lambda (item) (not (funcall fun item))) 
                                   :order-by order-by 
-                                  :range range)))))
+                                  :range range))))
 
 ; TODO count-by-in-sql-store not used yet, so should not work with mysql
 (defun count-by (class fun &key store &allow-other-keys)
@@ -142,7 +142,7 @@
 
 (defun find-by-values (class &rest args &key (test #'equal) order-by range (store *default-store*) &allow-other-keys)
   "Returns items of specified class. Filters passed as key arguments (key is slot name, value is value compared). 
-  :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
+   :test parameter is used to set default predicate for filters. You can also use (cons <filter-value <predicate>) instead of <filter-value> to override predicate for specific key."
   (setf args (alexandria:remove-from-plist args :order-by :range :store))
   (let ((filter-data 
           (loop for key in args by #'cddr 
@@ -166,7 +166,9 @@
                      (return-from filter-by-values nil)))
              t))
 
-      (find-persistent-objects store class :filter #'filter-by-values :order-by order-by :range range))))
+      (if (clsql-poweredp :store store)
+        (find-by-in-sql-store class #'filter-by-values :order-by order-by :range range :store store)
+        (find-persistent-objects store class :filter #'filter-by-values :order-by order-by :range range)))))
 
 (defun first-by-values (&rest args)
   "Similar to 'find-by-values' but returns only first item"
