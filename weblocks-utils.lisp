@@ -23,7 +23,7 @@
       (find-package 'clsql-fluid-bt)
       (or 
         (equal (type-of store) (intern "FLUID-DATABASE" "CLSQL-FLUID-BT"))
-        (typep store 'CLSQL-SYS:FLUID-DATABASE)))))
+        (typep store (intern "FLUID-DATABASE" "CLSQL-SYS"))))))
 
 (defun find-by-in-sql-store (class fun &key order-by range (store *default-store*))
   (if (not range)
