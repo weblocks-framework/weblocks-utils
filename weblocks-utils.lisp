@@ -192,6 +192,8 @@
 
 (defun prepend-webapp-path (value &optional (app (current-webapp)))
   "Prepends app prefix to url. Leading slashes in value will be automatically inserted when needed."
-  (format nil "~A/~A" 
-          (string-right-trim "/" (weblocks::weblocks-webapp-prefix app))
-          (string-left-trim "/" value)))
+  (if (ppcre:scan "//" value)
+    value
+    (format nil "~A/~A" 
+            (string-right-trim "/" (weblocks::weblocks-webapp-prefix app))
+            (string-left-trim "/" value))))
