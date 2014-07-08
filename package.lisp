@@ -7,12 +7,13 @@
     #:memory-poweredp
     #:prevalence-poweredp 
     #:clsql-poweredp 
-    #:find-by 
     #:first-by 
     #:count-by 
     #:count-of 
+    #:count-by-values
     #:all-of 
     #:find-by-values 
+    #:find-by 
     #:first-by-values 
     #:delete-all 
     #:delete-one 

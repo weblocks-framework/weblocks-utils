@@ -132,6 +132,9 @@
 (defun count-of (cls &key store)
   (count-persistent-objects (or store *default-store*) cls))
 
+(defun count-by-values (&rest args)
+  (length (apply #'find-by-values args)))
+
 (defun first-of (cls &key order-by range (store *default-store*))
   "Returns first element of persistent class."
   (first (all-of cls :order-by order-by :range range :store store)))
