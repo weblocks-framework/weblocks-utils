@@ -164,8 +164,10 @@
     (flet ((filter-by-values (object)
              (loop for (test-fun slot value) in filter-data do 
                    (unless (funcall test-fun value 
-                                    (when (slot-boundp object slot)
-                                      (slot-value object slot)))
+                                    (if (equal slot 'id)
+                                      (object-id object)
+                                      (when (slot-boundp object slot)
+                                        (slot-value object slot))))
                      (return-from filter-by-values nil)))
              t))
 
