@@ -39,3 +39,15 @@
                                        `(all-of ',record)) 
                            collect (cons (funcall ,title-function i) (object-id i)))))))
 
+(defun make-form (&key data-object on-success on-cancel fields (buttons '((:submit . "Сохранить"))) (persistp nil) (caption "") (answerp nil))
+  (make-quickform
+    (eval `(defview nil (:type form :caption ,caption :persistp ,persistp :buttons (quote ,buttons) 
+                         ;:inherit-from ,(when data-object 
+                         ;`(quote (:scaffold ,(type-of data-object))))
+
+                         )
+                    ,@fields))
+    :data data-object
+    :on-success on-success 
+    :on-cancel on-cancel
+    :answerp answerp))

@@ -41,5 +41,6 @@
     #:prepend-webapp-path 
     #:ps-with-scripts 
     #:ps-with-styles
-    #:ps-with-scripts-and-styles))
+    #:ps-with-scripts-and-styles
+    #:make-form))
 
