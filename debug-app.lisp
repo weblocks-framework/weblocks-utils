@@ -98,7 +98,7 @@
   (typecase obj
     (webapp-cls (object-id obj))
     (session-cls (arnesi:escape-as-html (format nil " session #~A" (slot-value obj 'hunchentoot-session-id))))
-    (session-data-cls (arnesi:escape-as-html (format nil " key: ~A, value: - ~A" (slot-value obj 'key) (slot-value obj 'value))))))
+    (session-data-cls (arnesi:escape-as-html (format nil " key: ~A, value: - ~A" (slot-value obj 'key) (prin1-to-string (slot-value obj 'value)))))))
 
 (defun init-user-session (root)
   (make-action #'remove-session-action "remove-session")
