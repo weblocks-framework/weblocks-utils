@@ -91,12 +91,6 @@
   "Takes as arguments class and predicate and filters all data by predicate. For clsql store predicate also used though it is very slow.
    Also accepts :order-by and :range parameters which are equal to 'find-persistent-objects' ones and :store parameter which is equal to 'find-persistent-objects' first parameter."
     (cond 
-      ((or (prevalence-poweredp :store store)
-           (memory-poweredp :store store))
-       (find-persistent-objects store class 
-                                :filter fun 
-                                :order-by order-by 
-                                :range range))
       ((clsql-poweredp :store store)
        (if fun 
          (find-by-in-sql-store 
@@ -109,8 +103,7 @@
            :order-by order-by 
            :range range)))
       (t (find-persistent-objects store class 
-                                  :filter-fn 
-                                  (lambda (item) (not (funcall fun item))) 
+                                  :filter fun
                                   :order-by order-by 
                                   :range range))))
 
@@ -118,12 +111,7 @@
 (defun count-by (class fun &key store &allow-other-keys)
   "Similar to find-by but returns count of items instead of items list."
   (let ((store (or store *default-store*)))
-    (if (or (prevalence-poweredp :store store) (memory-poweredp :store store))
-      (count-persistent-objects store class 
-                               :filter fun)
-      (count-persistent-objects store class 
-                               :filter-fn 
-                               (lambda (item) (not (funcall fun item)))))))
+    (count-persistent-objects store class :filter fun)))
 
 (defun all-of (cls &key store order-by range)
   "Simple wrapper around 'find-persistent-objects', returns all elements of persistent class, useful when debugging."

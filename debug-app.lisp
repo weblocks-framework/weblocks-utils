@@ -98,33 +98,47 @@
   (typecase obj
     (webapp-cls (object-id obj))
     (session-cls (arnesi:escape-as-html (format nil " session #~A" (slot-value obj 'hunchentoot-session-id))))
-    (session-data-cls (arnesi:escape-as-html (format nil " key: ~A, value: - ~A" (slot-value obj 'key) (prin1-to-string (slot-value obj 'value)))))))
+    (session-data-cls (arnesi:escape-as-html (format nil " key: ~A, value: - ~A" (slot-value obj 'key) 
+                                                     (truncate-string (prin1-to-string (slot-value obj 'value)) :length 20))))))
 
 (defun init-user-session (root)
   (make-action #'remove-session-action "remove-session")
-  (let ((tree-grid (make-instance 'tree-widget 
-                                  :class-store *list-store* 
-                                  :allow-add-p nil
-                                  :view (defview nil (:type tree)
-                                                 (weblocks-custom::data 
-                                                   :present-as (tree-branches :straight-column-captions nil)
-                                                   :reader (lambda (item)
-                                                             (tree-title item)))
-                                                 (action-buttons 
-                                                   :present-as html 
-                                                   :reader (lambda (item)
-                                                             (if (typep item 'session-cls)
-                                                               (weblocks::with-html-to-string 
-                                                                 (:a :href (add-get-param-to-url 
-                                                                             (make-action-url "remove-session")
-                                                                             "id"
-                                                                             (write-to-string (slot-value item 'hunchentoot-session-id)))
-                                                                  :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: '~A'}); return false;"
-                                                                                   "remove-session" (session-name-string-pair) (slot-value item 'hunchentoot-session-id))
-                                                                  "remove session"))
+  (let ((tree-grid)
+        (view))
+    (setf view (defview nil (:type tree)
+                        (weblocks-custom::data 
+                          :present-as (tree-branches :straight-column-captions nil)
+                          :reader (lambda (item)
+                                    (tree-title item)))
+                        (action-buttons 
+                          :present-as html 
+                          :reader (lambda (item)
+                                    (format nil "~A ~A"
+                                            (if (typep item 'session-data-cls)
+                                              ""
+                                              (funcall (weblocks-tree-widget::action-links-reader tree-grid view 
+                                                                                                  :adding-allowed-p nil
+                                                                                                  :editing-allowed-p nil 
+                                                                                                  :deleting-allowed-p nil) item))
+                                            (if (typep item 'session-cls)
+                                              (weblocks::with-html-to-string 
+                                                (:str "| ")
+                                                (:a :href (add-get-param-to-url 
+                                                            (make-action-url "remove-session")
+                                                            "id"
+                                                            (write-to-string (slot-value item 'hunchentoot-session-id)))
+                                                 :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: '~A'}); return false;"
+                                                                  "remove-session" (session-name-string-pair) (slot-value item 'hunchentoot-session-id))
+                                                 "remove session"))
 
-                                                               ""))))
-                                  :data-class 'webapp-cls)))
+                                              "") 
+                                            )))))
+    (setf tree-grid (make-instance 'tree-widget 
+                                   :expand-all-items-p nil
+                                   :class-store *list-store* 
+                                   :allow-add-p nil
+                                   :view view
+                                   :data-class 'webapp-cls))
     (setf (widget-children root)
           (make-navigation 
             "toplevel"
