@@ -127,8 +127,14 @@
   "Returns first element of persistent class."
   (first (all-of cls :order-by order-by :range range :store store)))
 
-(defun first-by (class fun &key order-by range)
+(defun first-by (class fun &key order-by)
   "Similar to 'find-by' but returns only first element of a list."
+  (unless order-by 
+    (find-by class 
+             (lambda (item)
+               (when (funcall fun item)
+                 (return-from first-by item)))
+             :order-by order-by))
   (first (find-by class fun :order-by order-by :range range)))
 
 (defun find-by-values (class &rest args &key (test #'equal) order-by range (store *default-store*) &allow-other-keys)
