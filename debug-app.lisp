@@ -100,11 +100,34 @@
     (session-cls (arnesi:escape-as-html (format nil " session #~A" (slot-value obj 'hunchentoot-session-id))))
     (session-data-cls (arnesi:escape-as-html (format nil " key: ~A, value: - ~A" (slot-value obj 'key) 
                                                      (truncate-string (prin1-to-string (slot-value obj 'value)) :length 20))))))
+(defun memory-html-info ()
+  (nl2br 
+    (let ((*standard-output* (make-string-output-stream)))
+      (room)
+      (get-output-stream-string *standard-output*))))
+
+(defun get-system-free-memory ()
+  "Returns bytes of system free memory"
+  (with-open-file (in "/proc/meminfo" :direction :input :if-does-not-exist nil)
+    (when in 
+      (loop for i = (read-line in nil) 
+            while i do 
+            (when (ppcre:scan "MemFree" i)
+              (return-from 
+                get-system-free-memory 
+                (* 1024 
+                   (parse-integer 
+                     (ppcre:scan-to-strings "\\d+" i)
+                     :junk-allowed t))))))))
+
+(defun bytes-as-pretty-megabytes (bytes-number)
+  (format nil "~A mb" (floor (/ bytes-number 1024 1024))))
 
 (defun init-user-session (root)
   (make-action #'remove-session-action "remove-session")
   (let ((tree-grid)
-        (view))
+        (view)
+        (summary-widget))
     (setf view (defview nil (:type tree)
                         (weblocks-custom::data 
                           :present-as (tree-branches :straight-column-captions nil)
@@ -139,9 +162,39 @@
                                    :allow-add-p nil
                                    :view view
                                    :data-class 'webapp-cls))
+    (setf summary-widget 
+          (make-instance 'composite 
+                         :widgets (list 
+                                    (lambda (&rest args)
+                                      (with-html 
+                                        (:h1 "Application Summary")
+                                        (:h2 "Memory")
+                                        (str "System free memory ")
+                                        (:b (str (bytes-as-pretty-megabytes (get-system-free-memory))))
+                                        (:br)
+                                        (str "Application used memory ")
+                                        (:b (str (bytes-as-pretty-megabytes (sb-kernel:dynamic-usage))))
+                                        (str ", ")
+                                        (render-link (lambda (&rest args)
+                                                       (do-information (memory-html-info)))
+                                                     "more info"
+                                                     )
+                                        (str ",")
+                                        (render-link 
+                                          (lambda (&rest args)
+                                            (if (find-package :tg)
+                                              (progn 
+                                                (funcall (intern "GC" "TG"))
+                                                (mark-dirty summary-widget)
+                                                (do-information "Success"))
+                                              (do-information "trivial-garbage package not found")))
+                                          "free unused memory")
+                                        (:br))))))
     (setf (widget-children root)
           (make-navigation 
             "toplevel"
+            (list "Application summary" 
+                  summary-widget nil)
             (list "Debug sessions" 
                   (make-instance 'composite 
                                  :widgets (list 
@@ -153,7 +206,7 @@
                                                  (:i "This is debug tree with applications (1st level), application sessions (2nd level) and application session values (3rd level)"))
                                                 (:br)
                                                 (:br)))
-                                            tree-grid)) nil)
+                                            tree-grid)) "debug-sessions")
             (list "Debug page" 
                   (eval 
                     `(make-navigation 
