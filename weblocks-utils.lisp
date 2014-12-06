@@ -135,7 +135,7 @@
                (when (funcall fun item)
                  (return-from first-by item)))
              :order-by order-by))
-  (first (find-by class fun :order-by order-by :range range)))
+  (first (find-by class fun :order-by order-by)))
 
 (defun find-by-values (class &rest args &key (test #'equal) order-by range (store *default-store*) &allow-other-keys)
   "Returns items of specified class. Filters passed as key arguments (key is slot name, value is value compared). 
