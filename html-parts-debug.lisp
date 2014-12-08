@@ -118,7 +118,7 @@
                 (ps:LISP 
                   (format 
                     nil "(~A)"
-                    (cl-json:encode-json-to-string md5-hash)))))))
+                    (json:encode-json-to-string md5-hash)))))))
     (send-script 
       (ps:ps 
         (unless (ps:@ window opener)
