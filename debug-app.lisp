@@ -165,31 +165,32 @@
     (setf summary-widget 
           (make-instance 'composite 
                          :widgets (list 
-                                    (lambda (&rest args)
-                                      (with-html 
-                                        (:h1 "Application Summary")
-                                        (:h2 "Memory")
-                                        (str "System free memory ")
-                                        (:b (str (bytes-as-pretty-megabytes (get-system-free-memory))))
-                                        (:br)
-                                        (str "Application used memory ")
-                                        (:b (str (bytes-as-pretty-megabytes (sb-kernel:dynamic-usage))))
-                                        (str ", ")
-                                        (render-link (lambda (&rest args)
-                                                       (do-information (memory-html-info)))
-                                                     "more info"
-                                                     )
-                                        (str ",")
-                                        (render-link 
-                                          (lambda (&rest args)
-                                            (if (find-package :tg)
-                                              (progn 
-                                                (funcall (intern "GC" "TG"))
-                                                (mark-dirty summary-widget)
-                                                (do-information "Success"))
-                                              (do-information "trivial-garbage package not found")))
-                                          "free unused memory")
-                                        (:br))))))
+                                    (make-widget 
+                                      (lambda (&rest args)
+                                        (with-html 
+                                          (:h1 "Application Summary")
+                                          (:h2 "Memory")
+                                          (str "System free memory ")
+                                          (:b (str (bytes-as-pretty-megabytes (get-system-free-memory))))
+                                          (:br)
+                                          (str "Application used memory ")
+                                          (:b (str (bytes-as-pretty-megabytes (sb-kernel:dynamic-usage))))
+                                          (str ", ")
+                                          (render-link (lambda (&rest args)
+                                                         (do-information (memory-html-info)))
+                                                       "more info"
+                                                       )
+                                          (str ",")
+                                          (render-link 
+                                            (lambda (&rest args)
+                                              (if (find-package :tg)
+                                                (progn 
+                                                  (funcall (intern "GC" "TG"))
+                                                  (mark-dirty summary-widget)
+                                                  (do-information "Success"))
+                                                (do-information "trivial-garbage package not found")))
+                                            "free unused memory")
+                                          (:br)))))))
     (setf (widget-children root)
           (make-navigation 
             "toplevel"
@@ -198,14 +199,15 @@
             (list "Debug sessions" 
                   (make-instance 'composite 
                                  :widgets (list 
-                                            (lambda (&rest args)
-                                              (with-html 
-                                                (:h1 "Debug sessions")
-                                                (:span :style "font-family:monospace"
-                                                 "[&#8505;] "
-                                                 (:i "This is debug tree with applications (1st level), application sessions (2nd level) and application session values (3rd level)"))
-                                                (:br)
-                                                (:br)))
+                                            (make-widget 
+                                              (lambda (&rest args)
+                                                (with-html 
+                                                  (:h1 "Debug sessions")
+                                                  (:span :style "font-family:monospace"
+                                                   "[&#8505;] "
+                                                   (:i "This is debug tree with applications (1st level), application sessions (2nd level) and application session values (3rd level)"))
+                                                  (:br)
+                                                  (:br))))
                                             tree-grid)) "debug-sessions")
             (list "Debug page" 
                   (eval 
@@ -217,40 +219,41 @@
                                               (make-instance 
                                                 'composite 
                                                 :widgets (list 
-                                                           (lambda (&rest args)
-                                                             (with-html 
-                                                               (:h1 "Debug page"))
-                                                             (let ((*html-parts-debug-app* ,(alexandria:make-keyword 
-                                                                                              (string-upcase 
-                                                                                                (weblocks::weblocks-webapp-name i)))))
-                                                               (if (with-debugged-app-md5-hash 
-                                                                     (ignore-errors (weblocks-util:get-html-parts-root-hash)))
-                                                                 (progn 
+                                                           (make-widget 
+                                                             (lambda (&rest args)
+                                                               (with-html 
+                                                                 (:h1 "Debug page"))
+                                                               (let ((*html-parts-debug-app* ,(alexandria:make-keyword 
+                                                                                                (string-upcase 
+                                                                                                  (weblocks::weblocks-webapp-name i)))))
+                                                                 (if (with-debugged-app-md5-hash 
+                                                                       (ignore-errors (weblocks-util:get-html-parts-root-hash)))
+                                                                   (progn 
+                                                                     (with-html 
+                                                                       (:span :style "font-family:monospace"
+                                                                        "[&#8505;] "
+                                                                        (:i "This is debug tree with rendered page parts from last page render."))
+                                                                       (:div :id "eval-message" :style "display:none;font-family:monospace"
+                                                                        (:br)
+                                                                        "[&#8505;] "
+                                                                        (:i "Evaluate "
+                                                                         (:br)
+                                                                         "&nbsp;&nbsp;"
+                                                                         (:b (str (ps:ps 
+                                                                                    ((ps:@ window open) 
+                                                                                     (ps:LISP ,(format nil "/debug-app/debug-page/~A" (weblocks::webapp-name i)))))))
+                                                                         (:br)
+                                                                         (cl-who:fmt 
+                                                                           "on your Weblocks-powered page of application ~A to receive debugging page mirror below (useful for visual debugging). This page then can be closed." ,(weblocks::webapp-name i))))
+                                                                       (:br)
+                                                                       (:br))
+                                                                     (render-debug-page-tree))
                                                                    (with-html 
                                                                      (:span :style "font-family:monospace"
                                                                       "[&#8505;] "
-                                                                      (:i "This is debug tree with rendered page parts from last page render."))
-                                                                     (:div :id "eval-message" :style "display:none;font-family:monospace"
-                                                                      (:br)
-                                                                      "[&#8505;] "
-                                                                      (:i "Evaluate "
-                                                                       (:br)
-                                                                       "&nbsp;&nbsp;"
-                                                                       (:b (str (ps:ps 
-                                                                                  ((ps:@ window open) 
-                                                                                   (ps:LISP ,(format nil "/debug-app/debug-page/~A" (weblocks::webapp-name i)))))))
-                                                                       (:br)
-                                                                       (cl-who:fmt 
-                                                                         "on your Weblocks-powered page of application ~A to receive debugging page mirror below (useful for visual debugging). This page then can be closed." ,(weblocks::webapp-name i))))
-                                                                     (:br)
-                                                                     (:br))
-                                                                   (render-debug-page-tree))
-                                                                 (with-html 
-                                                                   (:span :style "font-family:monospace"
-                                                                    "[&#8505;] "
-                                                                    (:i "It seems "
-                                                                     (:b (str (weblocks::weblocks-webapp-name ,i)))
-                                                                     " is not started yet. Please open its url in browser"))))))))
+                                                                      (:i "It seems "
+                                                                       (:b (str (weblocks::weblocks-webapp-name ,i)))
+                                                                       " is not started yet. Please open its url in browser")))))))))
                                               (attributize-name (weblocks::weblocks-webapp-name ,i))))))
                    "debug-page")))))
 
