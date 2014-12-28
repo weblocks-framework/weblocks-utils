@@ -1,9 +1,9 @@
 (in-package :weblocks-utils)
 
-(defun truncate-string (s &key (length 300) (etc "..."))
+(defun truncate-string (s &key (length 300) (etc "...") (explicit t))
   "If string exceeds specified LENGTH truncates it to this LENGTH and adds additional text"
   (if (> (length s) length)
-    (format nil "~A~A" (subseq s 0 length) etc)
+    (format nil "~A~A" (subseq s 0 (if explicit (- length (length etc)) length)) etc)
     s))
 
 (defun nl2br (text)

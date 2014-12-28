@@ -42,5 +42,6 @@
     #:ps-with-scripts 
     #:ps-with-styles
     #:ps-with-scripts-and-styles
-    #:make-form))
+    #:make-form 
+    #:truncate-string))
 
