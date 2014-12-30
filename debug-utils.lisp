@@ -19,3 +19,40 @@
      (progn ,@body) 
      (with-webapp (first-active-webapp)
        (progn ,@body))))
+
+(defun as-string (integer-or-string)
+  (format nil "~A" integer-or-string))
+
+(defun implode (glue-or-pieces &optional (pieces nil pieces-given-p))
+  (unless pieces-given-p 
+    (return-from implode (implode "" glue-or-pieces)))
+ 
+  (format nil "~{~A~}"
+          (cdr (loop for i in pieces append 
+                     (list glue-or-pieces i)))))
+ 
+(setf (fdefinition 'join) (fdefinition 'implode))
+
+(defun describe-set (objects)
+  "Used to print list of objects into table"
+  (flet ((text-before-newline (text)
+           (let ((pos (position #\Newline text)))
+             (if pos 
+               (subseq text 0 pos)
+               text))))
+    (let* ((cls (class-of (first objects)))
+           (slots (weblocks::class-visible-slots (class-of (first objects))))
+           (length 15)
+           (row-length (+ (* (length slots) length) (* (1- (length slots)) 3))))
+      (flet ((output-row (row)
+               (join " | "
+                     (loop for i in row
+                           collect  (format nil (format nil "~~~AA" length) (weblocks-utils::truncate-string (text-before-newline i) :length length))))))
+
+        (format t "~A~%" (output-row (loop for i in slots
+                                           collect (string (c2mop:slot-definition-name i)))))
+        (loop for i from 0 to row-length do
+              (format t "-"))
+        (format t "~%")
+        (loop for i in objects do 
+              (format t "~A~%" (output-row (loop for j in slots collect (as-string (slot-value i (c2mop:slot-definition-name j)))))))))))
