@@ -18,7 +18,7 @@
          (:file "debug-app" :depends-on ("package" "debug-utils" "html-parts-debug"))
          (:file "widget-stuff" :depends-on ("package"))
          (:file "assets-packages" :depends-on ("weblocks-utils"))
-         (:file "html-parts-debug" :depends-on ("tidy-patch"))
+         (:file "html-parts-debug" :depends-on ("tidy-patch" "package" "sessions-debug"))
          (:file "tidy-patch")
          (:file "jquery-seq-debug-macros")))
 
