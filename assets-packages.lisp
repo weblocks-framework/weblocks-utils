@@ -1,12 +1,12 @@
 (in-package :weblocks-utils)
 
-(defparameter *assets-directory* 
-  (merge-pathnames 
+(defparameter *assets-directory*
+  (merge-pathnames
     (make-pathname :directory '(:relative "assets"))
     (uiop:getcwd)))
 
-(defvar *versions-file* 
-  (merge-pathnames 
+(defvar *versions-file*
+  (merge-pathnames
     (make-pathname :name "versions" :type "lisp-expr")
     *assets-directory*))
 
@@ -17,23 +17,23 @@
 (defun file-get-contents(file &key (external-format :utf-8))
   (with-output-to-string (s)
     (with-open-file (in file :direction :input :external-format external-format)
-      (loop for char = (read-char in nil) 
+      (loop for char = (read-char in nil)
             while char do
             (write-char char s)))))
 
 (defun cleanup-version (version)
-  (string-trim 
+  (string-trim
     (format nil "~A~A~A" #\Newline #\Tab #\Space)
     version))
 
 (defun get-version (repository-directory)
   (if (pathnamep repository-directory)
-    (progn 
+    (progn
       (unless (cl-fad:directory-exists-p repository-directory)
         (error "Repository not found \"~A\"" repository-directory))
-      (cleanup-version 
-        (file-get-contents 
-          (merge-pathnames 
+      (cleanup-version
+        (file-get-contents
+          (merge-pathnames
             "version.txt"
             repository-directory))))
     (get-version-from-file repository-directory)))
@@ -44,7 +44,7 @@
 
     (when all-versions
       (setf version (cdr (assoc url all-versions :test #'string=)))
-      (when version 
+      (when version
         (return-from get-version-from-file version)))
 
     (setf version (cleanup-version (drakma:http-request (format nil "~A/version.txt" (string-right-trim "/" url)))))
@@ -60,51 +60,51 @@
 
 (defun set-versions (versions)
   (ensure-directories-exist *assets-directory*)
-  (with-open-file (out *versions-file* 
-                       :direction :output 
-                       :if-does-not-exist :create 
+  (with-open-file (out *versions-file*
+                       :direction :output
+                       :if-does-not-exist :create
                        :if-exists :supersede)
     (pprint versions out)))
 
 (defmacro with-directory (dir &body body)
-  `(unwind-protect 
+  `(unwind-protect
      (let ((last-dir (uiop:getcwd)))
        (uiop:chdir ,dir)
        ,@body
        (uiop:chdir last-dir))))
 
 (defun fetch-file-to (url dest)
-  (with-open-file (out dest 
-                       :direction :output 
-                       :if-does-not-exist :create 
-                       :if-exists :supersede 
+  (with-open-file (out dest
+                       :direction :output
+                       :if-does-not-exist :create
+                       :if-exists :supersede
                        :element-type '(unsigned-byte 8))
     (let  ((input (drakma:http-request url :want-stream t)))
-      (loop for byte = (read-byte input nil nil) 
-            while byte 
+      (loop for byte = (read-byte input nil nil)
+            while byte
             do (write-byte byte out))
       (close input))))
 
 (defun copy-serve-file (url-or-file dest)
   (if (pathnamep url-or-file)
-    (cl-fad:copy-file 
+    (cl-fad:copy-file
       (merge-pathnames (make-pathname :name "serve" :type "lisp") url-or-file)
       (merge-pathnames (make-pathname :name "serve" :type "lisp") dest))
-    (fetch-file-to 
+    (fetch-file-to
       (format nil "~A/serve.lisp" (string-right-trim "/" url-or-file))
       (merge-pathnames (make-pathname :name "serve" :type "lisp") dest))))
 
 (defun copy-get-file (url-or-file dest)
   (if (pathnamep url-or-file)
-    (cl-fad:copy-file 
+    (cl-fad:copy-file
       (merge-pathnames (make-pathname :name "get" :type "sh") url-or-file)
       (merge-pathnames (make-pathname :name "get" :type "sh") dest))
-    (fetch-file-to 
+    (fetch-file-to
       (format nil "~A/get.sh" (string-right-trim "/" url-or-file))
       (merge-pathnames (make-pathname :name "get" :type "sh") dest))))
 
 (defun require-assets (url-or-file &key (webapp (current-webapp)))
-  "Tries to get assets package from url-or-file into <getcwd>/assets/<assets package version> directory 
+  "Tries to get assets package from url-or-file into <getcwd>/assets/<assets package version> directory
   and serves files from this directory by evaluating <getcwd>/assets/<assets package version>/serve.lisp file"
   (let* ((version (get-version url-or-file))
          (*assets-package-dir* (merge-pathnames (make-pathname :directory `(:relative  ,version)) *assets-directory*)))
@@ -115,9 +115,9 @@
 
       (copy-get-file url-or-file *assets-package-dir*)
 
-      (with-directory 
-        *assets-package-dir* 
-        (unless (zerop (uiop:run-program '("bash" "get.sh") :output nil))
+      (with-directory
+        *assets-package-dir*
+        (unless (zerop (nth-value 2 (uiop:run-program '("bash" "get.sh") :output nil)))
           (error "Error occured during installing assets package \"~A\" please execute it manually~%cd ~A~%bash get.sh" url-or-file *assets-package-dir*)))
 
       (copy-serve-file url-or-file *assets-package-dir*)
@@ -125,20 +125,20 @@
       (format t "Successfully installed \"~A\"~%" url-or-file))
 
     (unless (cl-fad:file-exists-p (merge-pathnames (make-pathname :name "serve" :type "lisp") *assets-package-dir*))
-      (restart-case 
+      (restart-case
         (error "It seems like you've installed package \"~A\" manually. If no, remove directory \"~A\" and restart " url-or-file *assets-package-dir*)
-        (yes () :report "Yes, I've installed package manually, installation is ok" 
+        (yes () :report "Yes, I've installed package manually, installation is ok"
              (format t "Just copying serve.lisp file and move on")
              (copy-serve-file url-or-file *assets-package-dir*))
-        (removed-directory () 
+        (removed-directory ()
                            :report "I've removed directory, let's try installation again"
-                           (return-from require-assets 
+                           (return-from require-assets
                                         (require-assets url-or-file :webapp webapp)))))
 
     (load-serve-file webapp (merge-pathnames (make-pathname :name "serve" :type "lisp") *assets-package-dir*))))
 
 (defun explode (delimiter string)
-  (ppcre:split 
+  (ppcre:split
     (ppcre:quote-meta-chars delimiter)
     string))
 
@@ -147,15 +147,15 @@
   (declare (special *assets-package-dir*))
 
   (let* ((request-path (format nil "~A/" (prepend-webapp-path (or dir url-or-dir))))
-         (directory (merge-pathnames 
+         (directory (merge-pathnames
                       (make-pathname :directory (list* :relative (explode "/" (string-trim "/" url-or-dir))))
                       *assets-package-dir*))
          (path-and-dir  (cons request-path directory)))
 
     (unless (gethash path-and-dir *dispatchers-cache*)
       (setf (gethash path-and-dir *dispatchers-cache*) t)
-      (push 
-        (weblocks:create-folder-dispatcher-and-handler 
+      (push
+        (weblocks:create-folder-dispatcher-and-handler
           request-path
           directory)
         weblocks::*dispatch-table*))))
@@ -163,15 +163,15 @@
 (defun serve-file (file &optional url)
   "Should be called from *assets package* serve.lisp file"
   (let* ((request-path (prepend-webapp-path (or url file)))
-         (path (merge-pathnames 
+         (path (merge-pathnames
                  (parse-namestring file)
                  *assets-package-dir*))
          (path-and-file  (cons request-path path)))
 
     (unless (gethash path-and-file *dispatchers-cache*)
       (setf (gethash path-and-file *dispatchers-cache*) t)
-      (push 
-        (weblocks:create-static-file-dispatcher-and-handler 
+      (push
+        (weblocks:create-static-file-dispatcher-and-handler
           request-path
           path)
         weblocks::*dispatch-table*))))
