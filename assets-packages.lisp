@@ -117,8 +117,9 @@
 
       (with-directory
         *assets-package-dir*
-        (unless (zerop (nth-value 2 (uiop:run-program '("bash" "get.sh") :output nil)))
-          (error "Error occured during installing assets package \"~A\" please execute it manually~%cd ~A~%bash get.sh" url-or-file *assets-package-dir*)))
+        (let ((ret (car (last (multiple-value-list  (uiop:run-program '("bash" "get.sh") :output nil))))))
+          (unless (zerop ret)
+            (error "Error occured during installing assets package \"~A\" please execute it manually~%cd ~A~%bash get.sh" url-or-file *assets-package-dir*))))
 
       (copy-serve-file url-or-file *assets-package-dir*)
 
