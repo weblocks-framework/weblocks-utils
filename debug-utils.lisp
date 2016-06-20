@@ -55,4 +55,9 @@
               (format t "-"))
         (format t "~%")
         (loop for i in objects do 
-              (format t "~A~%" (output-row (loop for j in slots collect (as-string (slot-value i (c2mop:slot-definition-name j)))))))))))
+              (format t "~A~%" 
+                (output-row (loop for j in slots 
+                                  collect (as-string 
+                                            (if (slot-boundp i (c2mop:slot-definition-name j)) 
+                                              (slot-value i (c2mop:slot-definition-name j))
+                                              "<Unbound slot>"))))))))))
