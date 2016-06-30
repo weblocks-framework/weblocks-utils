@@ -10,6 +10,7 @@
 (defparameter weblocks-util:*process-html-parts-p* 
   (lambda ()
     (and 
+      (webapp-debug)
       (ignore-errors (weblocks:current-webapp))
       (not (typep (weblocks:current-webapp) 'debug-app)))))
 
