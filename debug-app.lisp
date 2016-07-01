@@ -7,7 +7,7 @@
            :autostart nil                   ;; have to start the app manually
            :debug t)
 
-(defparameter weblocks-util:*process-html-parts-p* 
+#+this-causes-performance-troubles-and-errors(defparameter weblocks-util:*process-html-parts-p* 
   (lambda ()
     (and 
       (webapp-debug)
