@@ -186,7 +186,7 @@
                                             (lambda (&rest args)
                                               (if (find-package :tg)
                                                 (progn 
-                                                  (funcall (intern "GC" "TG"))
+                                                  (funcall (intern "GC" "TG") :full t)
                                                   (mark-dirty summary-widget)
                                                   (do-information "Success"))
                                                 (do-information "trivial-garbage package not found")))
