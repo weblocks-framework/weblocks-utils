@@ -10,7 +10,7 @@
      :author "Olexiy Zamkoviy"
      :licence "Public Domain"
      :description "Utils for weblocks framework"
-     :depends-on (:weblocks :weblocks-jquery-js :alexandria :weblocks-stores :clache :weblocks-custom :weblocks-tree-widget :arnesi :cl-fad :drakma :cl-tidy :uiop :cl-json)
+     :depends-on (:weblocks :alexandria :weblocks-stores :clache :weblocks-custom :weblocks-tree-widget :arnesi :cl-fad :drakma :cl-tidy :uiop :cl-json)
      :components ((:file "package")
          (:file "weblocks-utils" :depends-on ("package"))
          (:file "debug-utils" :depends-on ("package"))
