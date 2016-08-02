@@ -4,6 +4,7 @@
            :prefix "/debug-app"
            :init-user-session 'init-user-session
            :description "Debugging app for weblocks"
+           :js-backend :jquery
            :autostart nil                   ;; have to start the app manually
            :debug t)
 
