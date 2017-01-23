@@ -164,6 +164,8 @@
                                         (slot-value object slot))))
                      (return-from filter-by-values nil)))
              t))
+      
+      (firephp:fb args)
 
       (if (clsql-poweredp :store store)
         (find-by-in-sql-store class #'filter-by-values :order-by order-by :range range :store store)
@@ -171,6 +173,14 @@
 
 (defun first-by-values (&rest args)
   "Similar to 'find-by-values' but returns only first item"
+
+  (when (getf (cdr args) :id)
+    (return-from first-by-values 
+                 (apply #'weblocks-stores:find-persistent-object-by-id 
+                        (list* *default-store* (first args) 
+                               (getf (cdr args) :id)
+                               (alexandria:remove-from-plist (cdr args) :id)))))
+
   (first (apply #'find-by-values args)))
 
 (defun delete-all (model &key (store *default-store*))
