@@ -164,8 +164,6 @@
                                         (slot-value object slot))))
                      (return-from filter-by-values nil)))
              t))
-      
-      (firephp:fb args)
 
       (if (clsql-poweredp :store store)
         (find-by-in-sql-store class #'filter-by-values :order-by order-by :range range :store store)
